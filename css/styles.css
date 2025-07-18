@@ -1,0 +1,560 @@
+:root {
+  --azul: #005baa;
+  --celeste: #009fd9;
+  --azul-oscuro: #003b75;
+  --amarillo: #f9c74f;
+  --gris-fondo: #f2f4f8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  height: 100%;
+  background-color: var(--gris-fondo);
+  color: #222;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  scroll-padding-bottom: 250px;
+  overflow-y: auto;
+}
+
+header.site-header {
+  background: linear-gradient(to right, var(--azul), var(--celeste));
+  color: white;
+  padding: 15px 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.logo img {
+  height: 40px;
+  width: auto;
+}
+
+nav.navbar {
+  display: flex;
+  gap: 25px;
+  align-items: center;
+}
+
+nav.navbar a {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+  white-space: nowrap;
+}
+
+nav.navbar a:hover {
+  color: var(--amarillo);
+}
+
+.dropdown {
+  position: relative;
+}
+
+.submenu {
+  display: none;
+  position: absolute;
+  background-color: var(--azul-oscuro);
+  border-radius: 8px;
+  top: 100%;
+  left: 0;
+  padding: 10px 0;
+  min-width: 180px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 999;
+  list-style: none;
+}
+
+.submenu li {
+  list-style: none;
+}
+
+.submenu a {
+  display: block;
+  padding: 10px 20px;
+  color: white;
+  text-decoration: none;
+  transition: background 0.3s;
+  white-space: nowrap;
+}
+
+.submenu a:hover {
+  background-color: var(--celeste);
+}
+
+.dropdown:hover .submenu {
+  display: block;
+}
+
+.menu-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 30px;
+  height: 21px;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.menu-toggle span {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background-color: white;
+  transition: all 0.3s ease-in-out;
+}
+
+.menu-toggle.active span:nth-child(1) {
+  transform: translateY(9px) rotate(45deg);
+}
+
+.menu-toggle.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-toggle.active span:nth-child(3) {
+  transform: translateY(-9px) rotate(-45deg);
+}
+
+nav.navbar.show {
+  display: flex;
+}
+nav.navbar.active {
+  display: flex;
+}
+
+main.container {
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 30px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: fadeIn 0.5s ease-in-out;
+  width: calc(100% - 40px);
+}
+
+h2.section-title {
+  font-size: 28px;
+  margin-bottom: 20px;
+  color: var(--azul);
+  font-weight: 600;
+  text-align: center;
+}
+
+.drop-area {
+  border: 2px dashed var(--celeste);
+  border-radius: 10px;
+  width: 100%;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  color: var(--celeste);
+  background-color: #f9fbfe;
+  margin-bottom: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.drop-area.dragover {
+  background-color: #e0f4ff;
+}
+
+input[type="password"],
+#codigoSala {
+  width: 100%;
+  padding: 10px 15px;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-bottom: 20px;
+  outline: none;
+}
+
+#fileNameInput {
+  width: 100%;
+  padding: 10px 15px;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-bottom: 20px;
+  outline: none;
+  display: none;
+}
+
+.buttons {
+  display: flex;
+  width: 100%;
+  gap: 15px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.buttons button {
+  flex: 1;
+  padding: 12px;
+  font-size: 1rem;
+  background-color: var(--azul);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+  transition: background-color 0.3s ease;
+  min-width: 120px;
+}
+
+button:hover {
+  background-color: var(--azul-oscuro);
+}
+
+#salaStatus {
+  margin-top: 25px;
+  color: var(--azul);
+  font-weight: 700;
+  font-size: 1.2rem;
+  text-align: center;
+  word-break: break-word;
+}
+
+#status {
+  margin-top: 5px;
+  color: var(--azul);
+  font-weight: bold;
+  min-height: 1.5em;
+  text-align: center;
+  word-break: break-word;
+}
+
+#qrContainer {
+  margin-top: 20px;
+  text-align: center;
+}
+
+#qrContainer canvas {
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.15);
+  max-width: 100%;
+  height: auto;
+}
+
+footer {
+  background: var(--azul-oscuro);
+  color: white;
+  text-align: center;
+  padding: 20px;
+  margin-top: auto;
+  width: 100%;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#menu p {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+  color: #555;
+}
+
+#recepcion {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+  display: none;
+  width: 100%;
+  text-align: center;
+}
+
+#recepcion #codigoSala {
+  margin-bottom: 15px;
+}
+
+#unirseBtn {
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  background-color: var(--azul);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+  transition: background-color 0.3s ease;
+  min-width: 100px;
+  font-weight: 500;
+  display: inline-block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#unirseBtn:hover {
+  background-color: var(--azul-oscuro);
+}
+
+@media (max-width: 768px) {
+  .header-container {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    padding: 0 20px;
+  }
+  .logo {
+    width: auto;
+    justify-content: flex-start;
+    margin-bottom: 0;
+    font-size: 1.5rem;
+  }
+  .logo img {
+    height: 40px;
+  }
+  nav.navbar {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    gap: 15px;
+    margin-top: 0;
+    background: var(--azul-oscuro);
+    position: absolute;
+    top: 70px;
+    left: 0;
+    padding: 20px 0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 100%;
+  }
+  nav.navbar.active {
+    display: flex;
+  }
+  nav.navbar a {
+    padding: 10px 20px;
+    width: 100%;
+    text-align: center;
+  }
+  nav.navbar a:hover {
+    background-color: var(--azul);
+  }
+  .menu-toggle {
+    display: flex;
+    position: static;
+    margin-left: auto;
+  }
+
+  .dropdown {
+    width: 100%;
+    text-align: center;
+  }
+
+  .dropdown > a {
+    padding: 10px 20px;
+    width: 100%;
+    display: block;
+  }
+
+  .submenu {
+    position: static;
+    display: none;
+    background: none;
+    box-shadow: none;
+    padding: 0;
+    border-radius: 0;
+    width: 100%;
+  }
+
+  .dropdown.active .submenu {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .submenu a {
+    padding-left: 35px;
+    text-align: center;
+  }
+
+  main.container {
+    margin: 20px auto;
+    padding: 20px;
+  }
+  h2.section-title {
+    font-size: 24px;
+  }
+  .drop-area {
+    padding: 20px;
+  }
+  input[type="password"],
+  #codigoSala {
+    padding: 8px 10px;
+    font-size: 0.9rem;
+  }
+  .buttons button {
+    flex: 1 1 100%;
+    margin-bottom: 10px;
+  }
+  .buttons button:last-child {
+    margin-bottom: 0;
+  }
+
+  #recepcion {
+    margin-top: 20px;
+  }
+  #recepcion #codigoSala {
+    margin-bottom: 15px;
+  }
+  #unirseBtn {
+    width: auto;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  header.site-header {
+    padding: 10px;
+  }
+  .menu-toggle {
+    right: 15px;
+    top: 15px;
+  }
+  main.container {
+    padding: 15px;
+    margin: 15px auto;
+  }
+  h2.section-title {
+    font-size: 22px;
+  }
+  .drop-area {
+    padding: 15px;
+    font-size: 0.9rem;
+  }
+  input[type="password"],
+  #codigoSala {
+    padding: 8px 10px;
+    font-size: 0.9rem;
+  }
+  .buttons button {
+    font-size: 0.9rem;
+    padding: 10px;
+  }
+  #salaStatus,
+  #status {
+    font-size: 1rem;
+  }
+}
+
+#chatContainer {
+  margin-top: 25px;
+  width: 100%;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  background-color: #fff;
+}
+
+#messagesDisplay {
+  flex-grow: 1;
+  padding: 15px;
+  overflow-y: auto;
+  max-height: 250px;
+  min-height: 100px;
+  background-color: #fcfcfc;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+}
+
+#messagesDisplay p {
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  border-radius: 15px;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+#messagesDisplay p.sent {
+  background-color: #e0f4ff;
+  color: #333;
+  align-self: flex-end;
+}
+
+#messagesDisplay p.received {
+  background-color: #f0f0f0;
+  color: #333;
+  align-self: flex-start;
+}
+
+#messagesDisplay p:last-child {
+  margin-bottom: 0;
+}
+
+#chatInputContainer {
+  display: flex;
+  padding: 10px 15px;
+  background-color: #f9f9f9;
+  border-top: 1px solid #eee;
+}
+
+#chatInput {
+  flex-grow: 1;
+  padding: 10px 12px;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  margin-right: 10px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+#chatInput:focus {
+  border-color: var(--azul);
+}
+
+#sendChatBtn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  background-color: var(--azul);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#sendChatBtn:hover {
+  background-color: var(--azul-oscuro);
+}

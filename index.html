@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CUDI Cypher - Cifrado Seguro</title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="./icons/logo-removebg-preview.png"
+    />
+    <link rel="stylesheet" href="./css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-container">
+        <div class="logo">
+          <img src="./icons/logo-removebg-preview.png" alt="Logo CUDI" />
+          <span>CUDI</span>
+        </div>
+        <nav class="navbar" id="navbar">
+          <a href="https://cudi-org.github.io/">Comunidad</a>
+          <a href="https://cudi-org.github.io/aboutus.html">Sobre Nosotros</a>
+          <a
+            href="https://mail.google.com/mail/?view=cm&fs=1&to=breolanapp@gmail.com&su=Participar%20como%20colaborador"
+            target="_blank"
+          >
+            Colabora
+          </a>
+
+          <a
+            href="https://mail.google.com/mail/?view=cm&fs=1&to=breolanapp@gmail.com"
+            target="_blank"
+            >Contacto</a
+          >
+        </nav>
+        <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú">
+          ☰
+        </button>
+      </div>
+    </header>
+
+    <main class="container">
+      <h2 class="section-title">CUDI Sync</h2>
+
+      <div id="menu">
+        <p>¿Qué quieres hacer?</p>
+        <div class="buttons">
+          <button onclick="crearSala()">Enviar archivo</button>
+          <button onclick="mostrarRecepcion()">Recibir archivo</button>
+        </div>
+        <div id="recepcion" style="width: 100%; display: none">
+          <input type="text" id="codigoSala" placeholder="Código de sala" />
+          <button id="unirseBtn" onclick="unirseSala()">Unirse</button>
+        </div>
+      </div>
+
+      <div id="zonaTransferencia" style="display: none; width: 100%">
+        <div
+          class="drop-area"
+          id="dropZone"
+          tabindex="0"
+          role="button"
+          aria-label="Zona para subir archivos"
+        >
+          <p>Haz clic o arrastra un archivo aquí para compartir</p>
+          <input type="file" id="fileInput" hidden />
+        </div>
+
+        <div id="salaStatus">Sala: —</div>
+        <div id="status">Conectando…</div>
+
+        <div id="qrContainer"></div>
+
+        <div id="chatContainer">
+          <div id="messagesDisplay"></div>
+          <div id="chatInputContainer">
+            <input
+              type="text"
+              id="chatInput"
+              placeholder="Escribe tu mensaje..."
+              disabled
+            />
+            <button id="sendChatBtn" disabled>Enviar</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>
+        &copy; 2025 CUDI - Comunidad de Usuarios para la Defensa Informática
+      </p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+    <script src="./scripts/script.js"></script>
+  </body>
+</html>
