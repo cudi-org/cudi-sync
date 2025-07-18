@@ -2,18 +2,18 @@
   "name": "CUDI Sync",
   "short_name": "Sync",
   "description": "Transferencia de archivos P2P",
-  "start_url": "./sync.html",
+  "start_url": "https://cudi-org.github.io/cudi-sync/",
   "display": "standalone",
   "background_color": "#121212",
   "theme_color": "#007bff",
   "icons": [
     {
-      "src": "./icons/logo-removebg-preview.png",
+      "src": "./icons/logo.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "./icons/logo-removebg-preview.png",
+      "src": "./icons/splash.png",
       "sizes": "512x512",
       "type": "image/png"
     },
