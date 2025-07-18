@@ -3,9 +3,6 @@ const fileInput = document.getElementById("fileInput");
 const status = document.getElementById("status");
 const salaStatus = document.getElementById("salaStatus");
 const qrContainer = document.getElementById("qrContainer");
-const menuToggle = document.getElementById("menuToggle");
-const navbar = document.getElementById("navbar");
-
 const chatInput = document.getElementById("chatInput");
 const sendChatBtn = document.getElementById("sendChatBtn");
 const messagesDisplay = document.getElementById("messagesDisplay");
@@ -24,20 +21,6 @@ let tamañoArchivoEsperado = 0;
 let nombreArchivoRecibido = "";
 
 fileInput.disabled = true;
-
-menuToggle.addEventListener("click", () => {
-  navbar.classList.toggle("active");
-  menuToggle.classList.toggle("active");
-});
-
-navbar.querySelectorAll("a").forEach((link) => {
-  link.addEventListener("click", () => {
-    if (navbar.classList.contains("active")) {
-      navbar.classList.remove("active");
-      menuToggle.classList.remove("active");
-    }
-  });
-});
 
 function generarCodigo() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
