@@ -6,6 +6,9 @@ const qrContainer = document.getElementById("qrContainer");
 const chatInput = document.getElementById("chatInput");
 const sendChatBtn = document.getElementById("sendChatBtn");
 const messagesDisplay = document.getElementById("messagesDisplay");
+const menuToggle = document.getElementById("menu-toggle");
+const navbar = document.getElementById("navbar");
+const dropdowns = document.querySelectorAll(".dropdown");
 
 let socket, peer, dataChannel;
 let salaId = null;
@@ -483,7 +486,11 @@ chatInput.addEventListener("keydown", (event) => {
 
 function displayChatMessage(message, senderType) {
   const p = document.createElement("p");
-  p.textContent = message;
+  const linkRegex = /(https?:\/\/[^\s]+)/g;
+  p.innerHTML = message.replace(
+    linkRegex,
+    '<a href="$1" target="_blank">$1</a>'
+  );
   p.classList.add(senderType);
   messagesDisplay.appendChild(p);
   messagesDisplay.scrollTop = messagesDisplay.scrollHeight;
@@ -519,3 +526,36 @@ if ("serviceWorker" in navigator) {
       });
   });
 }
+
+if (menuToggle && navbar) {
+  menuToggle.addEventListener("click", () => {
+    navbar.classList.toggle("active");
+    menuToggle.classList.toggle("active");
+  });
+}
+
+dropdowns.forEach((dropdown) => {
+  const dropdownBtn = dropdown.querySelector(".dropbtn");
+  if (dropdownBtn) {
+    dropdownBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropdown.classList.toggle("active");
+      if (navbar.classList.contains("active")) {
+        dropdowns.forEach((otherDropdown) => {
+          if (otherDropdown !== dropdown) {
+            otherDropdown.classList.remove("active");
+          }
+        });
+      }
+    });
+  }
+});
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".navbar") && navbar.classList.contains("active")) {
+    dropdowns.forEach((dropdown) => {
+      dropdown.classList.remove("active");
+    });
+  }
+});
