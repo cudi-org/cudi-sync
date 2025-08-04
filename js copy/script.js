@@ -13,6 +13,7 @@ const dropdowns = document.querySelectorAll(".dropdown");
 let socket, peer, dataChannel;
 let salaId = null;
 let modo = null;
+
 let mensajePendiente = [];
 
 const CHUNK_SIZE = 16 * 1024;
@@ -21,8 +22,6 @@ let enviarArchivoPendiente = false;
 let archivoRecibidoBuffers = [];
 let tamañoArchivoEsperado = 0;
 let nombreArchivoRecibido = "";
-
-const appType = "cudi-sync";
 
 fileInput.disabled = true;
 
@@ -86,16 +85,20 @@ function iniciarConexion() {
 
   socket.addEventListener("open", () => {
     status.innerText = "Conectado al servidor de señalización.";
+
     while (mensajePendiente.length > 0) {
       socket.send(mensajePendiente.shift());
     }
+
     enviarSocket({
       type: "join",
       room: salaId,
-      appType: appType,
     });
+
     if (modo === "send") {
       crearPeer(true);
+    } else {
+      crearPeer(false);
     }
   });
 
@@ -138,15 +141,11 @@ function enviarSocket(obj) {
     obj.tipo === "respuesta" ||
     obj.tipo === "candidato"
   ) {
-    mensajeAEnviar = JSON.stringify({
-      type: "signal",
-      data: obj,
-      appType: appType,
-      room: salaId,
-    });
+    mensajeAEnviar = JSON.stringify({ type: "signal", data: obj });
   } else {
     mensajeAEnviar = JSON.stringify(obj);
   }
+
   if (socket.readyState === WebSocket.OPEN) {
     socket.send(mensajeAEnviar);
   } else {
@@ -191,27 +190,33 @@ function crearPeer(isOffer) {
 
   if (isOffer) {
     dataChannel = peer.createDataChannel("canalDatos");
+
     dataChannel.onopen = () => {
       status.innerText =
         "Canal de datos abierto. Listo para enviar archivos y chatear.";
       fileInput.disabled = false;
       chatInput.disabled = false;
       sendChatBtn.disabled = false;
+
       if (enviarArchivoPendiente && archivoParaEnviar) {
         enviarArchivoPendiente = false;
         enviarArchivo();
       }
     };
+
     dataChannel.onclose = () => {
       status.innerText = "Canal de datos cerrado.";
       fileInput.disabled = true;
       chatInput.disabled = true;
       sendChatBtn.disabled = true;
     };
+
     dataChannel.onerror = (error) => {};
+
     dataChannel.onmessage = (event) => {
       manejarChunk(event.data);
     };
+
     peer
       .createOffer()
       .then((oferta) => {
@@ -228,6 +233,7 @@ function crearPeer(isOffer) {
   } else {
     peer.ondatachannel = (event) => {
       dataChannel = event.channel;
+
       dataChannel.onopen = () => {
         status.innerText =
           "Canal de datos abierto. Listo para recibir archivos y chatear.";
@@ -235,13 +241,16 @@ function crearPeer(isOffer) {
         chatInput.disabled = false;
         sendChatBtn.disabled = false;
       };
+
       dataChannel.onclose = () => {
         status.innerText = "Canal de datos cerrado.";
         fileInput.disabled = true;
         chatInput.disabled = true;
         sendChatBtn.disabled = true;
       };
+
       dataChannel.onerror = (error) => {};
+
       dataChannel.onmessage = (event) => {
         manejarChunk(event.data);
       };
@@ -251,15 +260,9 @@ function crearPeer(isOffer) {
 
 function manejarMensaje(mensaje) {
   switch (mensaje.type) {
-    case "start_negotiation":
-      if (modo === "receive") {
-        if (!peer) {
-          crearPeer(false);
-        }
-      }
-      break;
     case "signal":
       const data = mensaje.data;
+
       if (data.tipo === "oferta") {
         if (!peer) {
           crearPeer(false);
@@ -288,10 +291,12 @@ function manejarMensaje(mensaje) {
         }
       }
       break;
+
     case "ready":
       status.innerText =
         "Conexión WebRTC establecida. Listo para transferencia.";
       break;
+
     case "cerrar":
       if (peer) {
         peer.close();
@@ -302,6 +307,7 @@ function manejarMensaje(mensaje) {
         sendChatBtn.disabled = true;
       }
       break;
+
     default:
       break;
   }
@@ -334,6 +340,7 @@ dropZone.addEventListener("drop", (e) => {
     status.innerText = "La conexión no está lista para enviar un archivo.";
     return;
   }
+
   const archivos = e.dataTransfer.files;
   if (archivos.length > 0) {
     prepararEnvioArchivo(archivos[0]);
@@ -359,30 +366,38 @@ function enviarArchivo() {
     status.innerText = "Canal de datos no está abierto aún. Esperando...";
     return;
   }
+
   if (!archivoParaEnviar) {
     status.innerText = "No hay archivo para enviar.";
     return;
   }
+
   status.innerText = `Enviando archivo: ${archivoParaEnviar.name} (${archivoParaEnviar.size} bytes)`;
+
   const meta = {
     type: "meta",
     nombre: archivoParaEnviar.name,
     tamaño: archivoParaEnviar.size,
   };
   dataChannel.send(JSON.stringify(meta));
+
   const lector = new FileReader();
   let offset = 0;
+
   lector.onerror = (e) => {
     status.innerText = "Error leyendo archivo.";
   };
+
   lector.onabort = () => {
     status.innerText = "Lectura de archivo abortada.";
   };
+
   lector.onload = (e) => {
     dataChannel.send(e.target.result);
     offset += e.target.result.byteLength;
     const porcentaje = ((offset / archivoParaEnviar.size) * 100).toFixed(2);
     status.innerText = `Enviando archivo: ${archivoParaEnviar.name} (${offset} / ${archivoParaEnviar.size} bytes) - ${porcentaje}%`;
+
     if (offset < archivoParaEnviar.size) {
       leerSlice(offset);
     } else {
@@ -391,10 +406,12 @@ function enviarArchivo() {
       fileInput.value = "";
     }
   };
+
   function leerSlice(desde) {
     const slice = archivoParaEnviar.slice(desde, desde + CHUNK_SIZE);
     lector.readAsArrayBuffer(slice);
   }
+
   leerSlice(0);
 }
 
@@ -437,6 +454,7 @@ function mostrarProgresoRecepcion() {
     2
   );
   status.innerText = `Recibiendo archivo: ${nombreArchivoRecibido} (${tamañoRecibido} / ${tamañoArchivoEsperado} bytes) - ${porcentaje}%`;
+
   if (tamañoRecibido >= tamañoArchivoEsperado && tamañoArchivoEsperado > 0) {
     const archivoBlob = new Blob(archivoRecibidoBuffers);
     const urlDescarga = URL.createObjectURL(archivoBlob);
