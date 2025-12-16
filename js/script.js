@@ -1,6 +1,5 @@
 const dropZone = document.getElementById("dropZone");
 const fileInput = document.getElementById("fileInput");
-const status = document.getElementById("status");
 const salaStatus = document.getElementById("salaStatus");
 const qrContainer = document.getElementById("qrContainer");
 const chatInput = document.getElementById("chatInput");
@@ -8,12 +7,16 @@ const sendChatBtn = document.getElementById("sendChatBtn");
 const messagesDisplay = document.getElementById("messagesDisplay");
 const menuToggle = document.getElementById("menu-toggle");
 const navbar = document.getElementById("navbar");
-const dropdowns = document.querySelectorAll(".dropdown");
+
+// Elementos nuevos UI
+const loadingOverlay = document.getElementById("loading-overlay");
+const loadingMessage = document.getElementById("loading-message");
 
 let socket, peer, dataChannel;
 let salaId = null;
 let modo = null;
 let mensajePendiente = [];
+let heartbeatInterval = null;
 
 const CHUNK_SIZE = 16 * 1024;
 let archivoParaEnviar = null;
@@ -24,14 +27,73 @@ let nombreArchivoRecibido = "";
 
 const appType = "cudi-sync";
 
+// Usar configuración global o valores por defecto
+const SIGNALING_URL = (typeof CONFIG !== 'undefined' && CONFIG.SIGNALING_SERVER_URL)
+  ? CONFIG.SIGNALING_SERVER_URL
+  : 'wss://cudi-sync-signalin.onrender.com';
+
+const ICE_SERVERS = (typeof CONFIG !== 'undefined' && CONFIG.ICE_SERVERS)
+  ? CONFIG.ICE_SERVERS
+  : [{ urls: "stun:stun.l.google.com:19302" }];
+
 fileInput.disabled = true;
+
+// --- Funciones UI Modernas ---
+
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+
+  // Icono simple basado en tipo
+  let icon = '';
+  if (type === 'success') icon = '✅ ';
+  if (type === 'error') icon = '❌ ';
+  toast.textContent = icon + message;
+
+  container.appendChild(toast);
+
+  // Auto eliminar
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => {
+      if (container.contains(toast)) container.removeChild(toast);
+    }, 300);
+  }, 4000);
+}
+
+function toggleLoading(show, message = "Loading...") {
+  if (show) {
+    loadingMessage.textContent = message;
+    loadingOverlay.classList.remove('hidden');
+  } else {
+    loadingOverlay.classList.add('hidden');
+  }
+}
+
+// --- Lógica Principal ---
 
 function generarCodigo() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
 function crearSala() {
-  salaId = generarCodigo();
+  const customInput = document.getElementById("customRoomInput");
+  const customCode = customInput.value.trim().toUpperCase();
+
+  if (customCode) {
+    // Validation: only letters and numbers
+    if (/^[A-Z0-9-]{3,15}$/.test(customCode)) {
+      salaId = customCode;
+    } else {
+      showToast("Invalid code. Use 3-15 alphanumeric chars.", "error");
+      return;
+    }
+  } else {
+    salaId = generarCodigo();
+  }
+
   modo = "send";
   window.location.hash = `send-${salaId}`;
   iniciarTransferencia();
@@ -49,7 +111,7 @@ function unirseSala() {
     window.location.hash = `receive-${salaId}`;
     iniciarTransferencia();
   } else {
-    alert("Por favor, introduce un código de sala.");
+    showToast("Please enter a room code.", "error");
   }
 }
 
@@ -57,7 +119,10 @@ function iniciarTransferencia() {
   document.getElementById("menu").style.display = "none";
   document.getElementById("zonaTransferencia").style.display = "block";
 
-  salaStatus.textContent = `Sala: ${salaId}`;
+  // Añadir clase glass al contenedor principal si no la tiene
+  document.querySelector('.container').classList.add('glass');
+
+  salaStatus.textContent = `Room: ${salaId}`;
   qrContainer.innerHTML = "";
 
   if (modo === "send") {
@@ -68,10 +133,10 @@ function iniciarTransferencia() {
       value: urlParaRecibir,
     });
     qrContainer.appendChild(qr.element);
-
-    status.innerText = "Sala creada. Esperando conexión...";
+    showToast("Room created. Waiting for connection...", "info");
   } else if (modo === "receive") {
-    status.innerText = "Uniéndose a la sala, esperando conexión...";
+    showToast("Joining room...", "info");
+    toggleLoading(true, "Connecting to peer...");
   }
 
   iniciarConexion();
@@ -82,10 +147,21 @@ function iniciarTransferencia() {
 }
 
 function iniciarConexion() {
-  socket = new WebSocket("wss://cudi-sync-signalin.onrender.com");
+  socket = new WebSocket(SIGNALING_URL);
 
   socket.addEventListener("open", () => {
-    status.innerText = "Conectado al servidor de señalización.";
+    console.log("Connected to signaling server.");
+
+    // Heartbeat para mantener conexión viva
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
+    heartbeatInterval = setInterval(() => {
+      // Enviar ping si la conexión está abierta
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: 'ping' }));
+        // Nota: El servidor puede no responder pong explícito, pero mantiene el socket activo.
+      }
+    }, CONFIG.HEARTBEAT_INTERVAL || 30000);
+
     while (mensajePendiente.length > 0) {
       socket.send(mensajePendiente.shift());
     }
@@ -94,20 +170,26 @@ function iniciarConexion() {
       room: salaId,
       appType: appType,
     });
+
+    // El sender crea su peer proactivamente para estar listo,
+    // pero esperará la señal 'start_negotiation' para (re)enviar oferta si es necesario.
     if (modo === "send") {
       crearPeer(true);
     }
   });
 
   socket.addEventListener("close", () => {
-    status.innerText = "Conexión al servidor de señalización cerrada.";
+    showToast("Disconnected from server.", "error");
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
     fileInput.disabled = true;
     chatInput.disabled = true;
     sendChatBtn.disabled = true;
   });
 
   socket.addEventListener("error", (e) => {
-    status.innerText = "Error en la conexión WebSocket.";
+    console.error("WebSocket error:", e);
+    showToast("Connection error. Retrying...", "error");
+    toggleLoading(false);
   });
 
   socket.addEventListener("message", async (event) => {
@@ -115,16 +197,14 @@ function iniciarConexion() {
       let mensaje;
       try {
         mensaje = JSON.parse(event.data);
-      } catch {
-        return;
-      }
+      } catch { return; }
       manejarMensaje(mensaje);
     } else if (event.data instanceof Blob) {
       try {
         const texto = await event.data.text();
         const mensaje = JSON.parse(texto);
         manejarMensaje(mensaje);
-      } catch {}
+      } catch { }
     }
   });
 }
@@ -147,7 +227,7 @@ function enviarSocket(obj) {
   } else {
     mensajeAEnviar = JSON.stringify(obj);
   }
-  if (socket.readyState === WebSocket.OPEN) {
+  if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send(mensajeAEnviar);
   } else {
     mensajePendiente.push(mensajeAEnviar);
@@ -155,123 +235,114 @@ function enviarSocket(obj) {
 }
 
 function crearPeer(isOffer) {
-  peer = new RTCPeerConnection({
-    iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-  });
+  // Evitar crear múltiples peers si ya existe y está activo
+  if (peer && peer.connectionState !== 'closed' && peer.connectionState !== 'failed') {
+    console.log("Peer ya existente, reutilizando.");
+    // Si somos el sender y nos piden crear oferta de nuevo (renegociación forzada por start_negotiation),
+    // debemos proceder a crear la oferta abajo.
+    if (!isOffer) return;
+  }
 
-  peer.onicecandidate = (event) => {
-    if (event.candidate) {
-      enviarSocket({
-        tipo: "candidato",
-        candidato: event.candidate,
-        sala: salaId,
-      });
-    }
-  };
+  // Si el peer no existe o está cerrado, lo creamos
+  if (!peer || peer.connectionState === 'closed' || peer.connectionState === 'failed') {
+    peer = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
-  peer.onconnectionstatechange = () => {
-    status.innerText = `Estado de conexión WebRTC: ${peer.connectionState}`;
-    if (
-      peer.connectionState === "disconnected" ||
-      peer.connectionState === "failed" ||
-      peer.connectionState === "closed"
-    ) {
-      status.innerText = `Conexión WebRTC ${peer.connectionState}.`;
-      fileInput.disabled = true;
-      chatInput.disabled = true;
-      sendChatBtn.disabled = true;
-    }
-    if (peer.connectionState === "connected") {
-      status.innerText = "Conexión WebRTC establecida.";
-    }
-  };
-
-  peer.oniceconnectionstatechange = () => {};
-  peer.onicegatheringstatechange = () => {};
-
-  if (isOffer) {
-    dataChannel = peer.createDataChannel("canalDatos");
-    dataChannel.onopen = () => {
-      status.innerText =
-        "Canal de datos abierto. Listo para enviar archivos y chatear.";
-      fileInput.disabled = false;
-      chatInput.disabled = false;
-      sendChatBtn.disabled = false;
-      if (enviarArchivoPendiente && archivoParaEnviar) {
-        enviarArchivoPendiente = false;
-        enviarArchivo();
+    peer.onicecandidate = (event) => {
+      if (event.candidate) {
+        enviarSocket({
+          tipo: "candidato",
+          candidato: event.candidate,
+          sala: salaId,
+        });
       }
     };
-    dataChannel.onclose = () => {
-      status.innerText = "Canal de datos cerrado.";
-      fileInput.disabled = true;
-      chatInput.disabled = true;
-      sendChatBtn.disabled = true;
+
+    peer.onconnectionstatechange = () => {
+      console.log(`WebRTC Connection State: ${peer.connectionState}`);
+      if (peer.connectionState === "disconnected" || peer.connectionState === "failed") {
+        showToast("P2P connection lost or unstable.", "error");
+        toggleLoading(false);
+      }
+      if (peer.connectionState === "connected") {
+        showToast("Device connected!", "success");
+        toggleLoading(false);
+      }
     };
-    dataChannel.onerror = (error) => {};
-    dataChannel.onmessage = (event) => {
-      manejarChunk(event.data);
+
+    peer.ondatachannel = (event) => {
+      setupDataChannel(event.channel);
     };
-    peer
-      .createOffer()
-      .then((oferta) => {
-        return peer.setLocalDescription(oferta);
-      })
+  }
+
+  // Lógica de Oferta
+  if (isOffer) {
+    // Si ya teníamos canal de datos (reutilización), usarlo, sino crear
+    if (!dataChannel || dataChannel.readyState !== 'open') {
+      dataChannel = peer.createDataChannel("canalDatos");
+      setupDataChannel(dataChannel);
+    }
+
+    peer.createOffer()
+      .then((oferta) => peer.setLocalDescription(oferta))
       .then(() => {
+        console.log("Enviando oferta...");
         enviarSocket({
           tipo: "oferta",
           oferta: peer.localDescription,
           sala: salaId,
         });
       })
-      .catch((error) => {});
-  } else {
-    peer.ondatachannel = (event) => {
-      dataChannel = event.channel;
-      dataChannel.onopen = () => {
-        status.innerText =
-          "Canal de datos abierto. Listo para recibir archivos y chatear.";
-        fileInput.disabled = true;
-        chatInput.disabled = false;
-        sendChatBtn.disabled = false;
-      };
-      dataChannel.onclose = () => {
-        status.innerText = "Canal de datos cerrado.";
-        fileInput.disabled = true;
-        chatInput.disabled = true;
-        sendChatBtn.disabled = true;
-      };
-      dataChannel.onerror = (error) => {};
-      dataChannel.onmessage = (event) => {
-        manejarChunk(event.data);
-      };
-    };
+      .catch((error) => console.error("Error creando oferta:", error));
   }
 }
 
+function setupDataChannel(channel) {
+  dataChannel = channel;
+  dataChannel.onopen = () => {
+    showToast("Ready to transfer.", "success");
+    fileInput.disabled = false; // Bidireccional: todos pueden enviar
+    chatInput.disabled = false;
+    sendChatBtn.disabled = false;
+    toggleLoading(false);
+
+    if (enviarArchivoPendiente && archivoParaEnviar) {
+      enviarArchivoPendiente = false;
+      enviarArchivo();
+    }
+  };
+  dataChannel.onclose = () => {
+    showToast("Data channel closed.", "info");
+    fileInput.disabled = true;
+    chatInput.disabled = true;
+    sendChatBtn.disabled = true;
+  };
+  dataChannel.onmessage = (event) => manejarChunk(event.data);
+}
+
+// FIX: Sender y Receiver deben manejar 'start_negotiation'
 function manejarMensaje(mensaje) {
+  console.log("Mensaje recibido:", mensaje.type, mensaje);
   switch (mensaje.type) {
     case "start_negotiation":
-      if (modo === "receive") {
-        if (!peer) {
-          crearPeer(false);
-        }
+      // FIX CRÍTICO: Al recibir esto, el servidor nos dice que ya estamos los 2.
+      // El Sender (quien tiene modo = send) DEBE iniciar la oferta (o reiniciarla).
+      // El Receiver espera pasivamente.
+      if (modo === "send") {
+        console.log("Starting negotiation via server signal...");
+        crearPeer(true);
+      } else {
+        // El Receiver asegura tener su peer listo para recibir oferta
+        if (!peer) crearPeer(false);
       }
       break;
+
     case "signal":
       const data = mensaje.data;
       if (data.tipo === "oferta") {
-        if (!peer) {
-          crearPeer(false);
-        }
-        peer
-          .setRemoteDescription(data.oferta)
-          .then(() => {
-            return peer.createAnswer();
-          })
-          .then((respuesta) => {
-            return peer.setLocalDescription(respuesta);
-          })
+        if (!peer) crearPeer(false);
+        peer.setRemoteDescription(new RTCSessionDescription(data.oferta))
+          .then(() => peer.createAnswer())
+          .then((respuesta) => peer.setLocalDescription(respuesta))
           .then(() => {
             enviarSocket({
               tipo: "respuesta",
@@ -279,30 +350,16 @@ function manejarMensaje(mensaje) {
               sala: salaId,
             });
           })
-          .catch((error) => {});
+          .catch((error) => console.error("Error manejando oferta:", error));
+
       } else if (data.tipo === "respuesta") {
-        peer.setRemoteDescription(data.respuesta).catch((error) => {});
+        peer.setRemoteDescription(new RTCSessionDescription(data.respuesta)).catch(console.error);
+
       } else if (data.tipo === "candidato") {
         if (peer) {
-          peer.addIceCandidate(data.candidato).catch((error) => {});
+          peer.addIceCandidate(new RTCIceCandidate(data.candidato)).catch(console.error);
         }
       }
-      break;
-    case "ready":
-      status.innerText =
-        "Conexión WebRTC establecida. Listo para transferencia.";
-      break;
-    case "cerrar":
-      if (peer) {
-        peer.close();
-        peer = null;
-        status.innerText = "Conexión finalizada.";
-        fileInput.disabled = true;
-        chatInput.disabled = true;
-        sendChatBtn.disabled = true;
-      }
-      break;
-    default:
       break;
   }
 }
@@ -311,86 +368,76 @@ dropZone.addEventListener("click", () => {
   if (!fileInput.disabled) {
     fileInput.click();
   } else {
-    status.innerText =
-      "Esperando que la conexión esté lista para seleccionar un archivo.";
+    showToast("Connect to a peer before sending.", "info");
   }
 });
 
 dropZone.addEventListener("dragover", (e) => {
   e.preventDefault();
-  if (modo === "send" && !fileInput.disabled) {
+  if (!fileInput.disabled) {
     dropZone.classList.add("dragover");
   }
 });
 
-dropZone.addEventListener("dragleave", () => {
-  dropZone.classList.remove("dragover");
-});
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
 
 dropZone.addEventListener("drop", (e) => {
   e.preventDefault();
   dropZone.classList.remove("dragover");
-  if (modo !== "send" || fileInput.disabled) {
-    status.innerText = "La conexión no está lista para enviar un archivo.";
+  if (fileInput.disabled) {
+    showToast("Cannot send files right now.", "error");
     return;
   }
   const archivos = e.dataTransfer.files;
-  if (archivos.length > 0) {
-    prepararEnvioArchivo(archivos[0]);
-  }
+  if (archivos.length > 0) prepararEnvioArchivo(archivos[0]);
 });
 
 fileInput.addEventListener("change", () => {
-  if (modo !== "send" || fileInput.disabled) return;
-  if (fileInput.files.length > 0) {
-    prepararEnvioArchivo(fileInput.files[0]);
-  }
+  if (fileInput.files.length > 0) prepararEnvioArchivo(fileInput.files[0]);
 });
 
 function prepararEnvioArchivo(archivo) {
   archivoParaEnviar = archivo;
-  status.innerText = `Archivo listo para enviar: ${archivo.name} (${archivo.size} bytes)`;
+  showToast(`File selected: ${archivo.name}`, "info");
   enviarArchivoPendiente = true;
   enviarArchivo();
 }
 
 function enviarArchivo() {
-  if (!dataChannel || dataChannel.readyState !== "open") {
-    status.innerText = "Canal de datos no está abierto aún. Esperando...";
-    return;
-  }
-  if (!archivoParaEnviar) {
-    status.innerText = "No hay archivo para enviar.";
-    return;
-  }
-  status.innerText = `Enviando archivo: ${archivoParaEnviar.name} (${archivoParaEnviar.size} bytes)`;
+  if (!dataChannel || dataChannel.readyState !== "open") return;
+  if (!archivoParaEnviar) return;
+
   const meta = {
     type: "meta",
     nombre: archivoParaEnviar.name,
     tamaño: archivoParaEnviar.size,
   };
   dataChannel.send(JSON.stringify(meta));
+
   const lector = new FileReader();
   let offset = 0;
-  lector.onerror = (e) => {
-    status.innerText = "Error leyendo archivo.";
-  };
-  lector.onabort = () => {
-    status.innerText = "Lectura de archivo abortada.";
-  };
+
   lector.onload = (e) => {
     dataChannel.send(e.target.result);
     offset += e.target.result.byteLength;
-    const porcentaje = ((offset / archivoParaEnviar.size) * 100).toFixed(2);
-    status.innerText = `Enviando archivo: ${archivoParaEnviar.name} (${offset} / ${archivoParaEnviar.size} bytes) - ${porcentaje}%`;
+    const porcentaje = ((offset / archivoParaEnviar.size) * 100).toFixed(0);
+
+    // Actualizar UI de progreso (podríamos usar el toast o un elemento dedicado)
+    if (offset % (CHUNK_SIZE * 10) === 0 || offset === archivoParaEnviar.size) {
+      // showToast(`Sending: ${porcentaje}%`, "info");
+      salaStatus.textContent = `Sending: ${porcentaje}%`;
+    }
+
     if (offset < archivoParaEnviar.size) {
       leerSlice(offset);
     } else {
-      status.innerText = `Archivo ${archivoParaEnviar.name} enviado correctamente.`;
+      showToast("File sent successfully.", "success");
+      salaStatus.textContent = `Room: ${salaId}`;
       archivoParaEnviar = null;
       fileInput.value = "";
     }
   };
+
   function leerSlice(desde) {
     const slice = archivoParaEnviar.slice(desde, desde + CHUNK_SIZE);
     lector.readAsArrayBuffer(slice);
@@ -399,6 +446,7 @@ function enviarArchivo() {
 }
 
 function manejarChunk(data) {
+  // Manejo de datos binarios vs texto
   if (typeof data === "string") {
     try {
       const msg = JSON.parse(data);
@@ -406,78 +454,87 @@ function manejarChunk(data) {
         nombreArchivoRecibido = msg.nombre;
         tamañoArchivoEsperado = msg.tamaño;
         archivoRecibidoBuffers = [];
-        status.innerText = `Recibiendo archivo: ${nombreArchivoRecibido} (0 / ${tamañoArchivoEsperado} bytes)`;
-        return;
+        showToast(`Receiving: ${nombreArchivoRecibido}`, "info");
       } else if (msg.type === "chat") {
-        displayChatMessage(`Amigo: ${msg.message}`, "received");
-        return;
+        displayChatMessage(msg.message, "received");
       }
-    } catch {}
-  } else if (data instanceof ArrayBuffer || data instanceof Blob) {
+    } catch { }
+  } else {
+    // Es un ArrayBuffer/Blob
+    const buffer = (data instanceof Blob) ? null : data; // Si llega blob habría que leerlo, pero dataChannel suele dar ArrayBuffer si binaryType='arraybuffer'
+
+    // En Chrome dataChannel binaryType por defecto es Blob, en Firefox ArrayBuffer.
+    // Vamos a asumir ArrayBuffer si no es string, o convertir.
     if (data instanceof Blob) {
       const reader = new FileReader();
-      reader.onload = () => {
-        archivoRecibidoBuffers.push(reader.result);
-        mostrarProgresoRecepcion();
-      };
+      reader.onload = () => processBuffer(reader.result);
       reader.readAsArrayBuffer(data);
     } else {
-      archivoRecibidoBuffers.push(data);
-      mostrarProgresoRecepcion();
+      processBuffer(data);
     }
   }
 }
 
-function mostrarProgresoRecepcion() {
-  let tamañoRecibido = archivoRecibidoBuffers.reduce(
-    (acum, buf) => acum + buf.byteLength,
-    0
-  );
-  const porcentaje = ((tamañoRecibido / tamañoArchivoEsperado) * 100).toFixed(
-    2
-  );
-  status.innerText = `Recibiendo archivo: ${nombreArchivoRecibido} (${tamañoRecibido} / ${tamañoArchivoEsperado} bytes) - ${porcentaje}%`;
-  if (tamañoRecibido >= tamañoArchivoEsperado && tamañoArchivoEsperado > 0) {
+function processBuffer(buffer) {
+  archivoRecibidoBuffers.push(buffer);
+  let tamañoRecibido = archivoRecibidoBuffers.reduce((acc, b) => acc + b.byteLength, 0);
+  // Progreso
+  const porcentaje = ((tamañoRecibido / tamañoArchivoEsperado) * 100).toFixed(0);
+  salaStatus.textContent = `Receiving: ${porcentaje}%`;
+
+  if (tamañoRecibido >= tamañoArchivoEsperado) {
     const archivoBlob = new Blob(archivoRecibidoBuffers);
     const urlDescarga = URL.createObjectURL(archivoBlob);
-    status.innerHTML = `Archivo recibido: <a href="${urlDescarga}" download="${nombreArchivoRecibido}">Haz clic aquí para descargar ${nombreArchivoRecibido}</a>`;
+
+    // Crear enlace de descarga automático o notificación con acción
+    const a = document.createElement('a');
+    a.href = urlDescarga;
+    a.download = nombreArchivoRecibido;
+    a.click();
+
+    showToast(`File received: ${nombreArchivoRecibido}`, "success");
+    salaStatus.textContent = `Room: ${salaId}`;
+
     archivoRecibidoBuffers = [];
     tamañoArchivoEsperado = 0;
-    nombreArchivoRecibido = "";
-    fileInput.disabled = true;
-    chatInput.disabled = false;
-    sendChatBtn.disabled = false;
   }
 }
 
+// Chat UI
 sendChatBtn.addEventListener("click", () => {
   const message = chatInput.value.trim();
   if (message && dataChannel && dataChannel.readyState === "open") {
     dataChannel.send(JSON.stringify({ type: "chat", message: message }));
-    displayChatMessage(`Tú: ${message}`, "sent");
+    displayChatMessage(message, "sent");
     chatInput.value = "";
   }
 });
 
-chatInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    event.preventDefault();
+chatInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
     sendChatBtn.click();
   }
 });
 
-function displayChatMessage(message, senderType) {
+function displayChatMessage(message, type) {
   const p = document.createElement("p");
-  const linkRegex = /(https?:\/\/[^\s]+)/g;
-  p.innerHTML = message.replace(
-    linkRegex,
-    '<a href="$1" target="_blank">$1</a>'
-  );
-  p.classList.add(senderType);
+  p.textContent = message; // Texto plano para seguridad XSS básico
+  p.className = type;
   messagesDisplay.appendChild(p);
   messagesDisplay.scrollTop = messagesDisplay.scrollHeight;
 }
 
+// Service Worker Registration
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js")
+      .then(() => console.log("SW Registrado"))
+      .catch((err) => console.log("SW Falló", err));
+  });
+}
+
+// Inicialización de hash
 window.addEventListener("load", () => {
   if (window.location.hash) {
     const hash = window.location.hash.substring(1);
@@ -489,55 +546,35 @@ window.addEventListener("load", () => {
       salaId = hash.replace("receive-", "").toUpperCase();
       modo = "receive";
       iniciarTransferencia();
+      document.getElementById("recepcion").style.display = "block"; // Mostrar input por si acaso, aunque ya estamos conectando
     }
   }
 });
 
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register("./service-worker.js")
-      .then((registration) => {
-        console.log(
-          "Service Worker registrado con éxito. Scope:",
-          registration.scope
-        );
-      })
-      .catch((error) => {
-        console.error("Fallo el registro del Service Worker:", error);
-      });
-  });
-}
-
 if (menuToggle && navbar) {
   menuToggle.addEventListener("click", () => {
     navbar.classList.toggle("active");
-    menuToggle.classList.toggle("active");
   });
 }
 
-dropdowns.forEach((dropdown) => {
-  const dropdownBtn = dropdown.querySelector(".dropbtn");
-  if (dropdownBtn) {
-    dropdownBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      dropdown.classList.toggle("active");
-      if (navbar.classList.contains("active")) {
-        dropdowns.forEach((otherDropdown) => {
-          if (otherDropdown !== dropdown) {
-            otherDropdown.classList.remove("active");
-          }
-        });
-      }
-    });
-  }
-});
+// Modal Logic
+const helpBtn = document.getElementById("help-btn");
+const infoModal = document.getElementById("info-modal");
+const closeModal = document.getElementById("close-modal");
 
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".navbar") && navbar.classList.contains("active")) {
-    dropdowns.forEach((dropdown) => {
-      dropdown.classList.remove("active");
-    });
-  }
-});
+if (helpBtn && infoModal && closeModal) {
+  helpBtn.addEventListener("click", () => {
+    infoModal.classList.remove("hidden");
+  });
+
+  closeModal.addEventListener("click", () => {
+    infoModal.classList.add("hidden");
+  });
+
+  // Cerrar al hacer clic fuera
+  infoModal.addEventListener("click", (e) => {
+    if (e.target === infoModal) {
+      infoModal.classList.add("hidden");
+    }
+  });
+}

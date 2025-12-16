@@ -1,95 +1,110 @@
 <!DOCTYPE html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CUDI Sync - Transferencias P2P</title>
-    <link rel="manifest" href="./manifest.json" />
-    <link
-      rel="icon"
-      type="image/png"
-      href="./icons/logo-removebg-preview.png"
-    />
-    <link rel="stylesheet" href="./css/styles.css" />
-  </head>
-  <body>
-    <header class="site-header">
-      <div class="header-container">
-        <div class="logo">
-          <img src="./icons/logo-removebg-preview.png" alt="Logo CUDI" />
-          <span>CUDI</span>
-        </div>
-        <nav class="navbar" id="navbar">
-          <a href="https://cudi-org.github.io/">Comunidad</a>
-          <a
-            href="https://mail.google.com/mail/?view=cm&fs=1&to=breolanapp@gmail.com&su=Proyecto%20Sync"
-            target="_blank"
-          >
-            Contacto
-          </a>
-        </nav>
-        <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú">
-          ☰
-        </button>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CUDI Sync - P2P File Transfer</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/x-icon" href="icons/icon-192x192.png">
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+
+<body>
+  <header class="site-header glass">
+    <div class="header-container">
+      <div class="logo">
+        <img src="./icons/logo-removebg-preview.png" alt="CUDI Logo" />
+        <span>CUDI Sync</span>
       </div>
-    </header>
+      <nav class="navbar" id="navbar">
+        <a href="https://cudi-org.github.io/">Community</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=breolanapp@gmail.com&su=Proyecto%20Sync"
+          target="_blank">Contact</a>
+      </nav>
+      <button class="menu-toggle" id="menu-toggle" aria-label="Open menu">
+        ☰
+      </button>
+      <button id="help-btn" class="help-btn" aria-label="Info & Privacy">
+        ?
+      </button>
+    </div>
+  </header>
 
-    <main class="container">
-      <h2 class="section-title">CUDI Sync</h2>
+  <main class="container glass">
+    <h2 class="section-title">Peer-to-Peer Transfer</h2>
 
-      <div id="menu">
-        <p>¿Qué quieres hacer?</p>
-        <div class="buttons">
-          <button onclick="crearSala()">Enviar archivo</button>
-          <button onclick="mostrarRecepcion()">Recibir archivo</button>
-        </div>
-        <div id="recepcion" style="width: 100%; display: none">
-          <input type="text" id="codigoSala" placeholder="Código de sala" />
-          <button id="unirseBtn" onclick="unirseSala()">Unirse</button>
-        </div>
+    <div id="menu">
+      <p>What do you want to do?</p>
+      <div class="buttons">
+        <button onclick="crearSala()">Send File</button>
+        <button onclick="mostrarRecepcion()">Receive File</button>
+      </div>
+      <div style="margin-top: 15px; text-align: center;">
+        <input type="text" id="customRoomInput" placeholder="Custom Code (Optional)"
+          style="max-width: 250px; text-align: center; margin-bottom: 0;">
+      </div>
+      <div id="recepcion" style="width: 100%; display: none">
+        <input type="text" id="codigoSala" placeholder="Enter Room Code" />
+        <button id="unirseBtn" onclick="unirseSala()">Join</button>
+      </div>
+    </div>
+
+    <div id="zonaTransferencia" style="display: none; width: 100%">
+      <div class="drop-area" id="dropZone" tabindex="0" role="button" aria-label="Zone to upload files">
+        <p>Drag & Drop files here or click to select</p>
+        <input type="file" id="fileInput" hidden />
       </div>
 
-      <div id="zonaTransferencia" style="display: none; width: 100%">
-        <div
-          class="drop-area"
-          id="dropZone"
-          tabindex="0"
-          role="button"
-          aria-label="Zona para subir archivos"
-        >
-          <p>Haz clic o arrastra un archivo aquí para compartir</p>
-          <input type="file" id="fileInput" hidden />
-        </div>
+      <div id="salaStatus">Room: —</div>
+      <div id="status">Connecting…</div>
 
-        <div id="salaStatus">Sala: —</div>
-        <div id="status">Conectando…</div>
+      <div id="qrContainer"></div>
 
-        <div id="qrContainer"></div>
-
-        <div id="chatContainer">
-          <div id="messagesDisplay"></div>
-          <div id="chatInputContainer">
-            <input
-              type="text"
-              id="chatInput"
-              placeholder="Escribe tu mensaje..."
-              disabled
-            />
-            <button id="sendChatBtn" disabled aria-label="Enviar mensaje">
-              <span class="send-icon"></span>
-            </button>
-          </div>
+      <div id="chatContainer">
+        <div id="messagesDisplay"></div>
+        <div id="chatInputContainer">
+          <input type="text" id="chatInput" placeholder="Type a message..." disabled />
+          <button id="sendChatBtn" disabled aria-label="Send message">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+            </svg>
+          </button>
         </div>
       </div>
-    </main>
+    </div>
+  </main>
 
-    <footer>
-      <p>
-        &copy; 2025 CUDI - Comunidad de Usuarios para la Defensa Informática
-      </p>
-    </footer>
+  <footer>
+    <p>
+      &copy; 2025 CUDI - Comunidad de Usuarios para la Defensa Informática
+    </p>
+  </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
-    <script src="./js/script.js"></script>
-  </body>
+  <div id="toast-container"></div>
+  <div id="loading-overlay" class="hidden">
+    <div class="spinner"></div>
+    <p id="loading-message">Loading...</p>
+  </div>
+
+  <!-- Info Modal -->
+  <div id="info-modal" class="modal hidden">
+    <div class="modal-content glass">
+      <span id="close-modal" class="close">&times;</span>
+      <h3>🔐 Privacy & Security</h3>
+      <p><strong>CUDI Sync</strong> uses <strong>P2P (Peer-to-Peer)</strong> technology. This means:</p>
+      <ul>
+        <li>❌ Your files are <strong>NOT</strong> stored on any server.</li>
+        <li>✅ Transfer is direct from device to device.</li>
+        <li>🛡️ No intermediaries can read your data.</li>
+      </ul>
+      <p class="small-text">Technical note: To connect, devices momentarily exchange their public IPs.</p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+  <script src="./js/config.js"></script>
+  <script src="./js/script.js"></script>
+</body>
+
 </html>
