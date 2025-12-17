@@ -99,6 +99,7 @@ main.container {
   padding: 40px;
   width: 90%;
   animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
 }
 
 @keyframes slideUp {
@@ -157,22 +158,26 @@ button:disabled {
 
 /* Help Button */
 .help-btn {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  color: white;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   font-weight: bold;
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-left: 15px;
-  min-width: unset !important;
-  flex: unset !important;
-  padding: 0 !important;
-  box-shadow: none !important;
+  /* Position absolute inside main container */
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  color: var(--primary);
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 102, 204, 0.2);
+  margin: 0;
+  padding: 0;
+  box-shadow: none;
+  z-index: 10;
+  transition: all 0.3s ease;
 }
 
 .help-btn:hover {
@@ -491,8 +496,11 @@ footer {
 @media (max-width: 768px) {
   .menu-toggle {
     display: block;
-    margin-right: 15px;
-    /* Separación con el Help Btn */
+    margin-right: 0;
+  }
+
+  header.site-header {
+    border-radius: 0;
   }
 
   nav.navbar {
@@ -535,4 +543,32 @@ footer {
     opacity: 1;
     transform: translateY(0);
   }
+}/* Download Button Action */
+.download-action-btn {
+    background: #28a745;
+    color: white;
+    margin-top: 10px;
+    width: auto;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    animation: pulse 2s infinite;
+}
+
+.download-action-btn:hover {
+    background: #218838;
+    transform: scale(1.05);
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
 }

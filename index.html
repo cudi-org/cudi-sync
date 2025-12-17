@@ -4,6 +4,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' wss://cudi-sync-signalin.onrender.com ws://localhost:8080; object-src 'none'; media-src 'none'; font-src 'self' https://fonts.gstatic.com; child-src 'none'; worker-src 'self';">
   <title>CUDI Sync - P2P File Transfer</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/x-icon" href="icons/icon-192x192.png">
@@ -18,27 +20,27 @@
         <span>CUDI Sync</span>
       </div>
       <nav class="navbar" id="navbar">
-        <a href="https://cudi-org.github.io/">Community</a>
-        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=breolanapp@gmail.com&su=Proyecto%20Sync"
-          target="_blank">Contact</a>
+        <a href="https://cudi-org.github.io/" target="_blank" rel="noopener noreferrer">Community</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=breolanapp@gmail.com&su=Proyecto%20Sync" target="_blank"
+          rel="noopener noreferrer">Contact</a>
       </nav>
       <button class="menu-toggle" id="menu-toggle" aria-label="Open menu">
         ☰
-      </button>
-      <button id="help-btn" class="help-btn" aria-label="Info & Privacy">
-        ?
       </button>
     </div>
   </header>
 
   <main class="container glass">
+    <button id="help-btn" class="help-btn" aria-label="Info & Privacy">
+      ?
+    </button>
     <h2 class="section-title">Peer-to-Peer Transfer</h2>
 
     <div id="menu">
       <p>What do you want to do?</p>
       <div class="buttons">
-        <button onclick="crearSala()">Send File</button>
-        <button onclick="mostrarRecepcion()">Receive File</button>
+        <button id="btnCreate">Send File</button>
+        <button id="btnShowJoin">Receive File</button>
       </div>
       <div style="margin-top: 15px; text-align: center;">
         <input type="text" id="customRoomInput" placeholder="Custom Code (Optional)"
@@ -46,7 +48,7 @@
       </div>
       <div id="recepcion" style="width: 100%; display: none">
         <input type="text" id="codigoSala" placeholder="Enter Room Code" />
-        <button id="unirseBtn" onclick="unirseSala()">Join</button>
+        <button id="unirseBtn">Join</button>
       </div>
     </div>
 

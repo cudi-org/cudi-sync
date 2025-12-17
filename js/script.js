@@ -8,7 +8,6 @@ const messagesDisplay = document.getElementById("messagesDisplay");
 const menuToggle = document.getElementById("menu-toggle");
 const navbar = document.getElementById("navbar");
 
-// Elementos nuevos UI
 const loadingOverlay = document.getElementById("loading-overlay");
 const loadingMessage = document.getElementById("loading-message");
 
@@ -27,7 +26,6 @@ let nombreArchivoRecibido = "";
 
 const appType = "cudi-sync";
 
-// Usar configuración global o valores por defecto
 const SIGNALING_URL = (typeof CONFIG !== 'undefined' && CONFIG.SIGNALING_SERVER_URL)
   ? CONFIG.SIGNALING_SERVER_URL
   : 'wss://cudi-sync-signalin.onrender.com';
@@ -38,23 +36,18 @@ const ICE_SERVERS = (typeof CONFIG !== 'undefined' && CONFIG.ICE_SERVERS)
 
 fileInput.disabled = true;
 
-// --- Funciones UI Modernas ---
-
 function showToast(message, type = 'info') {
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  toast.textContent = message;
 
-  // Icono simple basado en tipo
   let icon = '';
-  if (type === 'success') icon = '✅ ';
-  if (type === 'error') icon = '❌ ';
+  if (type === 'success') icon = ' ';
+  if (type === 'error') icon = ' ';
   toast.textContent = icon + message;
 
   container.appendChild(toast);
 
-  // Auto eliminar
   setTimeout(() => {
     toast.style.opacity = '0';
     setTimeout(() => {
@@ -72,8 +65,6 @@ function toggleLoading(show, message = "Loading...") {
   }
 }
 
-// --- Lógica Principal ---
-
 function generarCodigo() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
@@ -83,7 +74,6 @@ function crearSala() {
   const customCode = customInput.value.trim().toUpperCase();
 
   if (customCode) {
-    // Validation: only letters and numbers
     if (/^[A-Z0-9-]{3,15}$/.test(customCode)) {
       salaId = customCode;
     } else {
@@ -119,7 +109,6 @@ function iniciarTransferencia() {
   document.getElementById("menu").style.display = "none";
   document.getElementById("zonaTransferencia").style.display = "block";
 
-  // Añadir clase glass al contenedor principal si no la tiene
   document.querySelector('.container').classList.add('glass');
 
   salaStatus.textContent = `Room: ${salaId}`;
@@ -152,13 +141,10 @@ function iniciarConexion() {
   socket.addEventListener("open", () => {
     console.log("Connected to signaling server.");
 
-    // Heartbeat para mantener conexión viva
     if (heartbeatInterval) clearInterval(heartbeatInterval);
     heartbeatInterval = setInterval(() => {
-      // Enviar ping si la conexión está abierta
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ type: 'ping' }));
-        // Nota: El servidor puede no responder pong explícito, pero mantiene el socket activo.
       }
     }, CONFIG.HEARTBEAT_INTERVAL || 30000);
 
@@ -171,8 +157,6 @@ function iniciarConexion() {
       appType: appType,
     });
 
-    // El sender crea su peer proactivamente para estar listo,
-    // pero esperará la señal 'start_negotiation' para (re)enviar oferta si es necesario.
     if (modo === "send") {
       crearPeer(true);
     }
@@ -235,15 +219,11 @@ function enviarSocket(obj) {
 }
 
 function crearPeer(isOffer) {
-  // Evitar crear múltiples peers si ya existe y está activo
   if (peer && peer.connectionState !== 'closed' && peer.connectionState !== 'failed') {
     console.log("Peer ya existente, reutilizando.");
-    // Si somos el sender y nos piden crear oferta de nuevo (renegociación forzada por start_negotiation),
-    // debemos proceder a crear la oferta abajo.
     if (!isOffer) return;
   }
 
-  // Si el peer no existe o está cerrado, lo creamos
   if (!peer || peer.connectionState === 'closed' || peer.connectionState === 'failed') {
     peer = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
@@ -274,9 +254,7 @@ function crearPeer(isOffer) {
     };
   }
 
-  // Lógica de Oferta
   if (isOffer) {
-    // Si ya teníamos canal de datos (reutilización), usarlo, sino crear
     if (!dataChannel || dataChannel.readyState !== 'open') {
       dataChannel = peer.createDataChannel("canalDatos");
       setupDataChannel(dataChannel);
@@ -300,7 +278,7 @@ function setupDataChannel(channel) {
   dataChannel = channel;
   dataChannel.onopen = () => {
     showToast("Ready to transfer.", "success");
-    fileInput.disabled = false; // Bidireccional: todos pueden enviar
+    fileInput.disabled = false;
     chatInput.disabled = false;
     sendChatBtn.disabled = false;
     toggleLoading(false);
@@ -319,19 +297,14 @@ function setupDataChannel(channel) {
   dataChannel.onmessage = (event) => manejarChunk(event.data);
 }
 
-// FIX: Sender y Receiver deben manejar 'start_negotiation'
 function manejarMensaje(mensaje) {
   console.log("Mensaje recibido:", mensaje.type, mensaje);
   switch (mensaje.type) {
     case "start_negotiation":
-      // FIX CRÍTICO: Al recibir esto, el servidor nos dice que ya estamos los 2.
-      // El Sender (quien tiene modo = send) DEBE iniciar la oferta (o reiniciarla).
-      // El Receiver espera pasivamente.
       if (modo === "send") {
         console.log("Starting negotiation via server signal...");
         crearPeer(true);
       } else {
-        // El Receiver asegura tener su peer listo para recibir oferta
         if (!peer) crearPeer(false);
       }
       break;
@@ -422,9 +395,7 @@ function enviarArchivo() {
     offset += e.target.result.byteLength;
     const porcentaje = ((offset / archivoParaEnviar.size) * 100).toFixed(0);
 
-    // Actualizar UI de progreso (podríamos usar el toast o un elemento dedicado)
     if (offset % (CHUNK_SIZE * 10) === 0 || offset === archivoParaEnviar.size) {
-      // showToast(`Sending: ${porcentaje}%`, "info");
       salaStatus.textContent = `Sending: ${porcentaje}%`;
     }
 
@@ -446,7 +417,6 @@ function enviarArchivo() {
 }
 
 function manejarChunk(data) {
-  // Manejo de datos binarios vs texto
   if (typeof data === "string") {
     try {
       const msg = JSON.parse(data);
@@ -460,11 +430,8 @@ function manejarChunk(data) {
       }
     } catch { }
   } else {
-    // Es un ArrayBuffer/Blob
-    const buffer = (data instanceof Blob) ? null : data; // Si llega blob habría que leerlo, pero dataChannel suele dar ArrayBuffer si binaryType='arraybuffer'
+    const buffer = (data instanceof Blob) ? null : data;
 
-    // En Chrome dataChannel binaryType por defecto es Blob, en Firefox ArrayBuffer.
-    // Vamos a asumir ArrayBuffer si no es string, o convertir.
     if (data instanceof Blob) {
       const reader = new FileReader();
       reader.onload = () => processBuffer(reader.result);
@@ -478,7 +445,6 @@ function manejarChunk(data) {
 function processBuffer(buffer) {
   archivoRecibidoBuffers.push(buffer);
   let tamañoRecibido = archivoRecibidoBuffers.reduce((acc, b) => acc + b.byteLength, 0);
-  // Progreso
   const porcentaje = ((tamañoRecibido / tamañoArchivoEsperado) * 100).toFixed(0);
   salaStatus.textContent = `Receiving: ${porcentaje}%`;
 
@@ -486,21 +452,30 @@ function processBuffer(buffer) {
     const archivoBlob = new Blob(archivoRecibidoBuffers);
     const urlDescarga = URL.createObjectURL(archivoBlob);
 
-    // Crear enlace de descarga automático o notificación con acción
     const a = document.createElement('a');
     a.href = urlDescarga;
     a.download = nombreArchivoRecibido;
-    a.click();
 
-    showToast(`File received: ${nombreArchivoRecibido}`, "success");
-    salaStatus.textContent = `Room: ${salaId}`;
+    const downloadBtn = document.createElement('button');
+    downloadBtn.textContent = ` Download ${nombreArchivoRecibido}`;
+    downloadBtn.className = "download-action-btn";
+    downloadBtn.onclick = () => {
+      a.click();
+      URL.revokeObjectURL(urlDescarga);
+      downloadBtn.remove();
+      salaStatus.innerHTML = "";
+    };
+
+    salaStatus.innerHTML = "";
+    salaStatus.appendChild(downloadBtn);
+
+    showToast(`File ready: ${nombreArchivoRecibido}`, "success");
 
     archivoRecibidoBuffers = [];
     tamañoArchivoEsperado = 0;
   }
 }
 
-// Chat UI
 sendChatBtn.addEventListener("click", () => {
   const message = chatInput.value.trim();
   if (message && dataChannel && dataChannel.readyState === "open") {
@@ -519,13 +494,12 @@ chatInput.addEventListener("keydown", (e) => {
 
 function displayChatMessage(message, type) {
   const p = document.createElement("p");
-  p.textContent = message; // Texto plano para seguridad XSS básico
+  p.textContent = message;
   p.className = type;
   messagesDisplay.appendChild(p);
   messagesDisplay.scrollTop = messagesDisplay.scrollHeight;
 }
 
-// Service Worker Registration
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./service-worker.js")
@@ -534,7 +508,6 @@ if ("serviceWorker" in navigator) {
   });
 }
 
-// Inicialización de hash
 window.addEventListener("load", () => {
   if (window.location.hash) {
     const hash = window.location.hash.substring(1);
@@ -546,7 +519,7 @@ window.addEventListener("load", () => {
       salaId = hash.replace("receive-", "").toUpperCase();
       modo = "receive";
       iniciarTransferencia();
-      document.getElementById("recepcion").style.display = "block"; // Mostrar input por si acaso, aunque ya estamos conectando
+      document.getElementById("recepcion").style.display = "block";
     }
   }
 });
@@ -557,7 +530,14 @@ if (menuToggle && navbar) {
   });
 }
 
-// Modal Logic
+const btnCreate = document.getElementById("btnCreate");
+const btnShowJoin = document.getElementById("btnShowJoin");
+const btnJoin = document.getElementById("unirseBtn");
+
+if (btnCreate) btnCreate.addEventListener("click", crearSala);
+if (btnShowJoin) btnShowJoin.addEventListener("click", mostrarRecepcion);
+if (btnJoin) btnJoin.addEventListener("click", unirseSala);
+
 const helpBtn = document.getElementById("help-btn");
 const infoModal = document.getElementById("info-modal");
 const closeModal = document.getElementById("close-modal");
@@ -571,7 +551,6 @@ if (helpBtn && infoModal && closeModal) {
     infoModal.classList.add("hidden");
   });
 
-  // Cerrar al hacer clic fuera
   infoModal.addEventListener("click", (e) => {
     if (e.target === infoModal) {
       infoModal.classList.add("hidden");
