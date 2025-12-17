@@ -38,12 +38,9 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    // Estrategia Stale-While-Revalidate
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
             const fetchPromise = fetch(event.request).then((networkResponse) => {
-                // Si la respuesta es válida, actualizamos la caché
-                // Aceptamos 'basic' (mismo origen) y 'cors' (CDN externo con headers correctos)
                 if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
                     const responseToCache = networkResponse.clone();
                     caches.open(CACHE_NAME).then((cache) => {
@@ -52,10 +49,9 @@ self.addEventListener('fetch', (event) => {
                 }
                 return networkResponse;
             }).catch(() => {
-                // Fallback si falla la red y no hay caché (opcional)
+
             });
 
-            // Devolver caché si existe, si no, esperar a red
             return cachedResponse || fetchPromise;
         })
     );
