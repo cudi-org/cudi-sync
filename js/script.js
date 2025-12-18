@@ -557,3 +557,24 @@ if (helpBtn && infoModal && closeModal) {
     }
   });
 }
+
+const openLegalBtn = document.getElementById("open-legal-modal");
+const legalModal = document.getElementById("legal-modal");
+const legalAcceptBtn = document.getElementById("legal-accept-btn");
+
+if (openLegalBtn && legalModal && legalAcceptBtn) {
+  openLegalBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    legalModal.classList.remove("hidden");
+  });
+
+  legalAcceptBtn.addEventListener("click", () => {
+    legalModal.classList.add("hidden");
+  });
+
+  legalModal.addEventListener("click", (e) => {
+    if (e.target === legalModal) {
+      legalModal.classList.add("hidden");
+    }
+  });
+}

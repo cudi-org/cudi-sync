@@ -79,7 +79,8 @@
 
   <footer>
     <p>
-      &copy; 2025 CUDI - Comunidad de Usuarios para la Defensa Informática
+      &copy; 2025 CUDI - Comunidad de Usuarios para la Defensa Informática | <a href="#" id="open-legal-modal"
+        style="color: inherit; text-decoration: underline;">Legal Notice</a>
     </p>
   </footer>
 
@@ -101,6 +102,23 @@
         <li> No intermediaries can read your data.</li>
       </ul>
       <p class="small-text">Technical note: To connect, devices momentarily exchange their public IPs.</p>
+    </div>
+  </div>
+
+  <!-- Legal Disclaimer Modal -->
+  <div id="legal-modal" class="modal hidden">
+    <div class="modal-content glass">
+      <h3>Legal Notice & Disclaimer</h3>
+      <p>This is a P2P (Peer-to-Peer) tool. This means:</p>
+      <ul>
+        <li><strong>We do not store your data.</strong> Transfer is direct between devices.</li>
+        <li>Your files do not pass through any intermediate storage server.</li>
+      </ul>
+      <p>By continuing, you accept that you are <strong>solely responsible</strong> for the content shared through this
+        platform.</p>
+      <div style="text-align: center; margin-top: 20px;">
+        <button id="legal-accept-btn">Understood, start</button>
+      </div>
     </div>
   </div>
 
