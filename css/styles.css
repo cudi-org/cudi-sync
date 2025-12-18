@@ -187,6 +187,41 @@ button:disabled {
   transform: scale(1.1);
 }
 
+/* Return Button */
+.return-btn {
+  display: none;
+  /* Hidden by default, shown via JS when in room */
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-weight: 900;
+  /* Thicker */
+  cursor: pointer;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  color: var(--primary);
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 102, 204, 0.2);
+  margin: 0;
+  padding: 0;
+  box-shadow: none;
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.return-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.return-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(1.1);
+}
+
 /* Modal Styles */
 .modal {
   position: fixed;

@@ -109,6 +109,9 @@ function iniciarTransferencia() {
   document.getElementById("menu").style.display = "none";
   document.getElementById("zonaTransferencia").style.display = "block";
 
+  const returnBtn = document.getElementById("return-btn");
+  if (returnBtn) returnBtn.style.display = "flex";
+
   document.querySelector('.container').classList.add('glass');
 
   salaStatus.textContent = `Room: ${salaId}`;
@@ -539,6 +542,7 @@ if (btnShowJoin) btnShowJoin.addEventListener("click", mostrarRecepcion);
 if (btnJoin) btnJoin.addEventListener("click", unirseSala);
 
 const helpBtn = document.getElementById("help-btn");
+const returnBtn = document.getElementById("return-btn");
 const infoModal = document.getElementById("info-modal");
 const closeModal = document.getElementById("close-modal");
 
@@ -555,6 +559,13 @@ if (helpBtn && infoModal && closeModal) {
     if (e.target === infoModal) {
       infoModal.classList.add("hidden");
     }
+  });
+}
+
+if (returnBtn) {
+  returnBtn.addEventListener("click", () => {
+    window.location.hash = "";
+    window.location.reload();
   });
 }
 
