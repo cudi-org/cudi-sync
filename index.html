@@ -38,6 +38,15 @@
         <polyline points="9 22 9 12 15 12 15 22"></polyline>
       </svg>
     </button>
+    <button id="settings-btn" class="settings-btn" aria-label="Settings">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path
+          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+        </path>
+      </svg>
+    </button>
     <button id="help-btn" class="help-btn" aria-label="Info & Privacy">
       ?
     </button>
@@ -125,6 +134,41 @@
         platform.</p>
       <div style="text-align: center; margin-top: 20px;">
         <button id="legal-accept-btn">Understood, start</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-content glass">
+      <span id="close-settings-modal" class="close">&times;</span>
+      <h3>Settings</h3>
+
+      <div class="settings-group">
+        <label for="stun-select">STUN Server:</label>
+        <select id="stun-select">
+          <option value="google">Google Default</option>
+          <option value="mozilla">Mozilla Services</option>
+          <option value="none">None (Local Network Only)</option>
+        </select>
+        <p class="setting-desc">Server used to establish the P2P connection (IP discovery).</p>
+      </div>
+
+      <div class="settings-group">
+        <label for="filesize-select">Max File Size Limit:</label>
+        <select id="filesize-select">
+          <option value="0">No Limit</option>
+          <option value="10">10 MB</option>
+          <option value="50">50 MB</option>
+          <option value="100">100 MB</option>
+          <option value="500">500 MB</option>
+          <option value="1024">1 GB</option>
+        </select>
+        <p class="setting-desc">Warn or block files larger than this limit.</p>
+      </div>
+
+      <div style="text-align: center; margin-top: 20px;">
+        <button id="save-settings-btn">Save Settings</button>
       </div>
     </div>
   </div>

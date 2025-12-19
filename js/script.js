@@ -30,9 +30,21 @@ const SIGNALING_URL = (typeof CONFIG !== 'undefined' && CONFIG.SIGNALING_SERVER_
   ? CONFIG.SIGNALING_SERVER_URL
   : 'wss://cudi-sync-signalin.onrender.com';
 
+// Initial settings load for immediate availability
+const LOADED_SETTINGS = JSON.parse(localStorage.getItem("cudi_settings") || '{"stun": "google"}');
+
+const STUN_SERVERS_MAP = {
+  "google": [{ urls: "stun:stun.l.google.com:19302" }],
+  "mozilla": [{ urls: "stun:stun.services.mozilla.com" }],
+  "none": []
+};
+
+// Determine which ICE servers to use based on settings
+const settingsIce = STUN_SERVERS_MAP[LOADED_SETTINGS.stun] || STUN_SERVERS_MAP["google"];
+
 const ICE_SERVERS = (typeof CONFIG !== 'undefined' && CONFIG.ICE_SERVERS)
   ? CONFIG.ICE_SERVERS
-  : [{ urls: "stun:stun.l.google.com:19302" }];
+  : { iceServers: settingsIce };
 
 fileInput.disabled = true;
 
@@ -228,7 +240,11 @@ function crearPeer(isOffer) {
   }
 
   if (!peer || peer.connectionState === 'closed' || peer.connectionState === 'failed') {
-    peer = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    // Dynamic load of current STUN settings
+    const currentStun = window.currentSettings?.stun || "google";
+    const dynamicIceServers = STUN_SERVERS_MAP[currentStun] || STUN_SERVERS_MAP["google"];
+
+    peer = new RTCPeerConnection({ iceServers: dynamicIceServers });
 
     peer.onicecandidate = (event) => {
       if (event.candidate) {
@@ -373,6 +389,16 @@ fileInput.addEventListener("change", () => {
 });
 
 function prepararEnvioArchivo(archivo) {
+  // Check Size Limit
+  const maxMb = parseInt(window.currentSettings?.maxFileSize || "0", 10);
+  if (maxMb > 0) {
+    const maxBytes = maxMb * 1024 * 1024;
+    if (archivo.size > maxBytes) {
+      showToast(`File too large. Limit is ${maxMb}MB.`, "error");
+      return;
+    }
+  }
+
   archivoParaEnviar = archivo;
   showToast(`File selected: ${archivo.name}`, "info");
   enviarArchivoPendiente = true;
@@ -588,6 +614,69 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target === legalModal) {
         legalModal.classList.add("hidden");
       }
+    });
+  }
+
+  // Settings Logic
+  const settingsBtn = document.getElementById("settings-btn");
+  const settingsModal = document.getElementById("settings-modal");
+  const closeSettingsModal = document.getElementById("close-settings-modal");
+  const saveSettingsBtn = document.getElementById("save-settings-btn");
+  const stunSelect = document.getElementById("stun-select");
+  const filesizeSelect = document.getElementById("filesize-select");
+
+  // Default Settings
+  const DEFAULT_SETTINGS = {
+    stun: "google",
+    maxFileSize: "0" // 0 = no limit
+  };
+
+  function loadSettings() {
+    const saved = localStorage.getItem("cudi_settings");
+    if (saved) {
+      return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+    }
+    return DEFAULT_SETTINGS;
+  }
+
+  function saveSettings(settings) {
+    localStorage.setItem("cudi_settings", JSON.stringify(settings));
+    window.currentSettings = settings; // Update global
+    showToast("Settings saved!", "success");
+    settingsModal.classList.add("hidden");
+  }
+
+  // Load on start
+  window.currentSettings = loadSettings();
+
+  if (settingsBtn && settingsModal && closeSettingsModal && saveSettingsBtn) {
+    settingsBtn.addEventListener("click", () => {
+      // Set current values in inputs
+      stunSelect.value = window.currentSettings.stun;
+      filesizeSelect.value = window.currentSettings.maxFileSize;
+      settingsModal.classList.remove("hidden");
+    });
+
+    closeSettingsModal.addEventListener("click", () => {
+      settingsModal.classList.add("hidden");
+    });
+
+    settingsModal.addEventListener("click", (e) => {
+      if (e.target === settingsModal) {
+        settingsModal.classList.add("hidden");
+      }
+    });
+
+    saveSettingsBtn.addEventListener("click", () => {
+      const newSettings = {
+        stun: stunSelect.value,
+        maxFileSize: filesizeSelect.value
+      };
+      saveSettings(newSettings);
+
+      // If we are already connected, we might need to reload to apply ICE changes? 
+      // For now, let's just save. The next connection (crearPeer) will use them.
+      // If user changes STUN mid-connection, it won't affect current peer unless we reconnect.
     });
   }
 });
