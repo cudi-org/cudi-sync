@@ -127,7 +127,7 @@ function iniciarConexion() {
         const texto = await event.data.text();
         const mensaje = JSON.parse(texto);
         manejarMensaje(mensaje);
-      } catch {}
+      } catch { }
     }
   });
 }
@@ -185,8 +185,8 @@ function crearPeer(isOffer) {
     }
   };
 
-  peer.oniceconnectionstatechange = () => {};
-  peer.onicegatheringstatechange = () => {};
+  peer.oniceconnectionstatechange = () => { };
+  peer.onicegatheringstatechange = () => { };
 
   if (isOffer) {
     dataChannel = peer.createDataChannel("canalDatos");
@@ -211,7 +211,7 @@ function crearPeer(isOffer) {
       sendChatBtn.disabled = true;
     };
 
-    dataChannel.onerror = (error) => {};
+    dataChannel.onerror = (error) => { };
 
     dataChannel.onmessage = (event) => {
       manejarChunk(event.data);
@@ -229,7 +229,7 @@ function crearPeer(isOffer) {
           sala: salaId,
         });
       })
-      .catch((error) => {});
+      .catch((error) => { });
   } else {
     peer.ondatachannel = (event) => {
       dataChannel = event.channel;
@@ -249,7 +249,7 @@ function crearPeer(isOffer) {
         sendChatBtn.disabled = true;
       };
 
-      dataChannel.onerror = (error) => {};
+      dataChannel.onerror = (error) => { };
 
       dataChannel.onmessage = (event) => {
         manejarChunk(event.data);
@@ -282,12 +282,12 @@ function manejarMensaje(mensaje) {
               sala: salaId,
             });
           })
-          .catch((error) => {});
+          .catch((error) => { });
       } else if (data.tipo === "respuesta") {
-        peer.setRemoteDescription(data.respuesta).catch((error) => {});
+        peer.setRemoteDescription(data.respuesta).catch((error) => { });
       } else if (data.tipo === "candidato") {
         if (peer) {
-          peer.addIceCandidate(data.candidato).catch((error) => {});
+          peer.addIceCandidate(data.candidato).catch((error) => { });
         }
       }
       break;
@@ -429,7 +429,7 @@ function manejarChunk(data) {
         displayChatMessage(`Amigo: ${msg.message}`, "received");
         return;
       }
-    } catch {}
+    } catch { }
   } else if (data instanceof ArrayBuffer || data instanceof Blob) {
     if (data instanceof Blob) {
       const reader = new FileReader();
