@@ -1,10 +1,16 @@
-const CACHE_NAME = 'cudi-sync-v2';
+const CACHE_NAME = 'cudi-sync-v3';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './css/styles.css',
     './js/config.js',
-    './js/script.js',
+    './js/main.js',
+    './js/state.js',
+    './js/utils.js',
+    './js/ui.js',
+    './js/signaling.js',
+    './js/webrtc.js',
+    './js/file-transfer.js',
     './manifest.json',
     './icons/logo.png',
     './icons/logo-removebg-preview.png',

@@ -443,15 +443,15 @@ async function enviarArchivo() {
     return;
   }
 
-  const arrayBuffer = await file.arrayBuffer();
+  // Streaming approach: do NOT load entire file.arrayBuffer()
   let offset = 0;
 
   showToast(`Sending: ${file.name}...`, "info");
   displayChatMessage(`Sending file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`, "sent", "You");
 
-  const sendLoop = () => {
-    while (offset < arrayBuffer.byteLength) {
-      // Flow control
+  const sendLoop = async () => {
+    while (offset < file.size) {
+      // Flow control check
       if (dataChannel.bufferedAmount > 16 * 1024 * 1024) {
         dataChannel.onbufferedamountlow = () => {
           dataChannel.onbufferedamountlow = null;
@@ -459,14 +459,25 @@ async function enviarArchivo() {
         };
         return;
       }
-      const chunk = arrayBuffer.slice(offset, offset + CHUNK_SIZE);
-      dataChannel.send(chunk);
+
+      const slice = file.slice(offset, offset + CHUNK_SIZE);
+      try {
+        const chunk = await slice.arrayBuffer();
+        dataChannel.send(chunk);
+      } catch (err) {
+        console.error("Error reading file slice:", err);
+        showToast("Error reading file.", "error");
+        return;
+      }
+
       offset += CHUNK_SIZE;
     }
+
     showToast("File sent successfully!", "success");
     archivoParaEnviar = null;
     fileInput.value = "";
   };
+
   sendLoop();
 }
 
@@ -508,7 +519,7 @@ function displayFileDownload(filename, url, type, alias) {
   wrapper.style.gap = "10px";
 
   const textSpan = document.createElement("span");
-  textSpan.innerHTML = `📎 ${filename}`;
+  textSpan.textContent = `📎 ${filename}`;
   wrapper.appendChild(textSpan);
 
   const btn = document.createElement("button");
@@ -633,7 +644,7 @@ function manejarChunk(data) {
           showToast(`${peerAlias} joined the room.`, "info");
           // Could update UI to show "Connected to [Alias]"
           const mon = document.getElementById("connection-monitor");
-          if (mon) mon.innerHTML = `Connected: ${peerAlias}`;
+          if (mon) mon.textContent = `Connected: ${peerAlias}`;
         }
       }
     } catch { }
@@ -891,10 +902,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (peer) peer.close();
         if (socket) socket.close();
 
-        if (window.currentSettings && window.currentSettings.autoClear) {
-          localStorage.clear();
-          sessionStorage.clear();
-        }
+        // ALWAYS clear on panic, regardless of settings
+        localStorage.clear();
+        sessionStorage.clear();
 
         // Attempt to close or navigate away
         window.open('', '_self', '');

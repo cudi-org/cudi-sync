@@ -5,10 +5,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' wss://cudi-sync-signalin.onrender.com ws://localhost:8080; object-src 'none'; media-src 'none'; font-src 'self' https://fonts.gstatic.com; child-src 'none'; worker-src 'self';">
+    content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://cdn.jsdelivr.net wss://cudi-sync-signalin.onrender.com ws://localhost:8080; object-src 'none'; media-src 'none'; font-src 'self' https://fonts.gstatic.com; child-src 'none'; worker-src 'self';">
   <title>CUDI Sync - P2P File Transfer</title>
   <link rel="manifest" href="./manifest.json">
-  <link rel="icon" type="image/x-icon" href="icons/icon-192x192.png">
+  <link rel="icon" type="image/x-icon" href="./icons/logo.png">
   <link rel="stylesheet" href="./css/styles.css" />
 </head>
 
@@ -216,7 +216,14 @@
 
   <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
   <script src="./js/config.js"></script>
-  <script src="./js/script.js"></script>
+  <!-- Application Scripts (Non-Module for file:// support) -->
+  <script src="js/state.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/file-transfer.js"></script>
+  <script src="js/signaling.js"></script>
+  <script src="js/webrtc.js"></script>
+  <script src="js/main.js" defer></script>
 </body>
 
 </html>
