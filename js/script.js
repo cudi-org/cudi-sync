@@ -141,6 +141,28 @@ function iniciarTransferencia() {
   } else if (modo === "receive") {
     showToast("Joining room...", "info");
     toggleLoading(true, "Connecting to peer...");
+
+    // Safety timeout to prevent eternal loading
+    setTimeout(() => {
+      const loading = document.getElementById("loading-overlay");
+      // If still loading and not connected (lock button logic check isn't enough, check loading visibility)
+      if (loading && !loading.classList.contains("hidden") && (!peer || peer.connectionState !== "connected")) {
+        toggleLoading(false);
+        if (confirm("Connection timed out or rejected. Return to menu?")) {
+          window.location.hash = "";
+          window.location.reload();
+        }
+      }
+    }, 15000); // 15 seconds timeout
+
+
+    // Hide Lock Button for Receiver
+    const lockBtn = document.getElementById("lock-room-btn");
+    if (lockBtn) lockBtn.style.display = "none";
+  } else {
+    // Show Lock Button for Sender
+    const lockBtn = document.getElementById("lock-room-btn");
+    if (lockBtn) lockBtn.style.display = "flex";
   }
 
   iniciarConexion();
@@ -170,6 +192,7 @@ function iniciarConexion() {
       type: "join",
       room: salaId,
       appType: appType,
+      alias: localStorage.getItem("cudi_alias") || ""
     });
 
     if (modo === "send") {
@@ -259,8 +282,21 @@ function crearPeer(isOffer) {
     peer.onconnectionstatechange = () => {
       console.log(`WebRTC Connection State: ${peer.connectionState}`);
       if (peer.connectionState === "disconnected" || peer.connectionState === "failed") {
-        showToast("P2P connection lost or unstable.", "error");
         toggleLoading(false);
+        const mon = document.getElementById("connection-monitor");
+        if (mon) {
+          mon.innerHTML = "Disconnected";
+          mon.classList.remove("active");
+        }
+
+        if (modo === "receive") {
+          showToast("Sender disconnected. Session ended for privacy.", "error");
+          alert("Sender disconnected. Session ended for privacy.");
+          // Optional: return to menu?
+          // window.location.reload(); 
+        } else {
+          showToast("Peer disconnected.", "error");
+        }
       }
       if (peer.connectionState === "connected") {
         showToast("Device connected!", "success");
@@ -334,6 +370,177 @@ function setupDataChannel(channel) {
   dataChannel.onmessage = (event) => manejarChunk(event.data);
 }
 
+// --- FILE HANDLING LOGIC ---
+
+dropZone.addEventListener("click", () => {
+  if (!fileInput.disabled) fileInput.click();
+});
+
+dropZone.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  dropZone.classList.add("dragover");
+});
+
+dropZone.addEventListener("dragleave", () => {
+  dropZone.classList.remove("dragover");
+});
+
+dropZone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dropZone.classList.remove("dragover");
+  if (fileInput.disabled) {
+    showToast("Wait for connection before sending files.", "error");
+    return;
+  }
+  if (e.dataTransfer.files.length > 0) {
+    handleFileSelection(e.dataTransfer.files[0]);
+  }
+});
+
+fileInput.addEventListener("change", (e) => {
+  if (fileInput.files.length > 0) {
+    handleFileSelection(fileInput.files[0]);
+  }
+});
+
+function handleFileSelection(file) {
+  archivoParaEnviar = file;
+  // Basic check for size immediately?
+  const limitMB = parseInt(window.currentSettings?.maxFileSize || "0");
+  if (limitMB > 0 && file.size > limitMB * 1024 * 1024) {
+    showToast(`File too large. Limit is ${limitMB}MB.`, "error");
+    archivoParaEnviar = null;
+    return;
+  }
+
+  if (dataChannel && dataChannel.readyState === "open") {
+    enviarArchivo();
+  } else {
+    enviarArchivoPendiente = true;
+    showToast(`Selected ${file.name}. Queued.`, "info");
+  }
+}
+
+async function enviarArchivo() {
+  if (!archivoParaEnviar) return;
+
+  const file = archivoParaEnviar;
+  const limitMB = parseInt(window.currentSettings?.maxFileSize || "0");
+  if (limitMB > 0 && file.size > limitMB * 1024 * 1024) {
+    showToast(`File too large. Limit is ${limitMB}MB.`, "error");
+    return;
+  }
+
+  try {
+    dataChannel.send(JSON.stringify({
+      type: "meta",
+      nombre: file.name,
+      tamaño: file.size,
+      tipoMime: file.type
+    }));
+  } catch (e) {
+    console.error("Error sending meta:", e);
+    return;
+  }
+
+  const arrayBuffer = await file.arrayBuffer();
+  let offset = 0;
+
+  showToast(`Sending: ${file.name}...`, "info");
+  displayChatMessage(`Sending file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`, "sent", "You");
+
+  const sendLoop = () => {
+    while (offset < arrayBuffer.byteLength) {
+      // Flow control
+      if (dataChannel.bufferedAmount > 16 * 1024 * 1024) {
+        dataChannel.onbufferedamountlow = () => {
+          dataChannel.onbufferedamountlow = null;
+          sendLoop();
+        };
+        return;
+      }
+      const chunk = arrayBuffer.slice(offset, offset + CHUNK_SIZE);
+      dataChannel.send(chunk);
+      offset += CHUNK_SIZE;
+    }
+    showToast("File sent successfully!", "success");
+    archivoParaEnviar = null;
+    fileInput.value = "";
+  };
+  sendLoop();
+}
+
+function processBuffer(data) {
+  archivoRecibidoBuffers.push(data);
+  const receivedSize = archivoRecibidoBuffers.reduce((acc, b) => acc + b.byteLength, 0);
+
+  // Optional: Show progress?
+
+  if (receivedSize >= tamañoArchivoEsperado) {
+    const blob = new Blob(archivoRecibidoBuffers);
+    archivoRecibidoBuffers = [];
+
+    const url = URL.createObjectURL(blob);
+
+    // Changed: Instead of auto-download, show button in chat
+    showToast(`File received: ${nombreArchivoRecibido}`, "success");
+    displayFileDownload(nombreArchivoRecibido, url, "received", "Sender");
+  }
+}
+
+function displayFileDownload(filename, url, type, alias) {
+  const p = document.createElement("p");
+
+  if (alias && alias !== "System") {
+    const userSpan = document.createElement("strong");
+    userSpan.textContent = alias;
+    userSpan.style.display = "block";
+    userSpan.style.fontSize = "0.8rem";
+    userSpan.style.marginBottom = "2px";
+    userSpan.style.color = (type === "sent") ? "#eee" : "#555";
+    p.appendChild(userSpan);
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.style.display = "flex";
+  wrapper.style.alignItems = "center";
+  wrapper.style.justifyContent = "space-between";
+  wrapper.style.gap = "10px";
+
+  const textSpan = document.createElement("span");
+  textSpan.innerHTML = `📎 ${filename}`;
+  wrapper.appendChild(textSpan);
+
+  const btn = document.createElement("button");
+  btn.className = "download-btn-icon";
+  btn.title = "Download";
+  btn.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+      <polyline points="7 10 12 15 17 10"></polyline>
+      <line x1="12" y1="15" x2="12" y2="3"></line>
+    </svg>
+  `;
+
+  btn.onclick = () => {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast("Downloading...", "success");
+  };
+
+  wrapper.appendChild(btn);
+  p.appendChild(wrapper);
+
+  p.className = type;
+  messagesDisplay.appendChild(p);
+  messagesDisplay.scrollTop = messagesDisplay.scrollHeight;
+}
+
+
 // START OF GLOBAL ROOM STATE
 let isRoomLocked = false;
 
@@ -350,11 +557,17 @@ function manejarMensaje(mensaje) {
         }
 
         if (window.currentSettings && window.currentSettings.manualApproval) {
-          // We need a small timeout or async behavior to not block the thread immediately if using confirm, 
-          // though confirm blocks execution which is actually fine here.
-          const confirmJoin = confirm("A new device wants to connect to your room. Allow?");
+          const peerName = mensaje.alias || "A new device";
+          const confirmJoin = confirm(`${peerName} wants to connect to your room. Allow?`);
           if (!confirmJoin) {
             showToast("Connection rejected by you.", "info");
+            // Notify peer of rejection
+            enviarSocket({
+              type: "connection_rejected",
+              room: salaId,
+              appType: appType,
+              target: "sender_rejection"
+            });
             return;
           }
         }
@@ -390,6 +603,14 @@ function manejarMensaje(mensaje) {
           peer.addIceCandidate(new RTCIceCandidate(data.candidato)).catch(console.error);
         }
       }
+      break;
+
+    case "connection_rejected":
+      toggleLoading(false);
+      showToast("Connection rejected by host.", "error");
+      alert("Connection rejected by host.");
+      window.location.hash = "";
+      window.location.reload();
       break;
   }
 }
@@ -445,23 +666,25 @@ sendChatBtn.addEventListener("click", () => {
 function displayChatMessage(message, type, alias) {
   const p = document.createElement("p");
 
-  if (alias && alias.trim() !== "") {
-    const userSpan = document.createElement("strong");
-    userSpan.textContent = alias;
-    userSpan.style.display = "block";
-    userSpan.style.fontSize = "0.8rem";
-    userSpan.style.marginBottom = "2px";
-    userSpan.style.color = (type === "sent") ? "#eee" : "#555"; // Adjust contrast
-    p.appendChild(userSpan);
-
+  if (alias === "System") {
+    p.classList.add("system-message");
+    p.textContent = message;
+  } else {
+    if (alias && alias.trim() !== "") {
+      const userSpan = document.createElement("strong");
+      userSpan.textContent = alias;
+      userSpan.style.display = "block";
+      userSpan.style.fontSize = "0.8rem";
+      userSpan.style.marginBottom = "2px";
+      userSpan.style.color = (type === "sent") ? "#eee" : "#555";
+      p.appendChild(userSpan);
+    }
     const msgSpan = document.createElement("span");
     msgSpan.textContent = message;
     p.appendChild(msgSpan);
-  } else {
-    p.textContent = message;
   }
 
-  p.className = type;
+  p.classList.add(type);
   messagesDisplay.appendChild(p);
   messagesDisplay.scrollTop = messagesDisplay.scrollHeight;
 }
@@ -610,6 +833,16 @@ document.addEventListener('DOMContentLoaded', () => {
       autoClearToggle.checked = window.currentSettings.autoClear !== false; // Default true
 
       settingsModal.classList.remove("hidden");
+
+      // Hide Manual Approval if Receiver
+      const manualGroup = document.getElementById("manual-approval-group");
+      if (manualGroup) {
+        if (modo === "receive") {
+          manualGroup.style.display = "none";
+        } else {
+          manualGroup.style.display = "block";
+        }
+      }
     });
 
     closeSettingsModal.addEventListener("click", () => {

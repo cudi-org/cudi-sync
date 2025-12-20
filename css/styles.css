@@ -422,7 +422,54 @@ input[type="text"]:focus {
 
 #sendChatBtn svg {
   margin-left: 3px;
-  /* Pequeño ajuste visual para centrar el icono de "avión" */
+}
+
+/* System Message Style */
+.system-message {
+  color: #888 !important;
+  font-style: italic;
+  font-size: 0.85rem !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  align-self: center !important;
+  max-width: 95% !important;
+}
+
+/* Download Icon Button */
+.download-btn-icon {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  /* Ensure it doesn't shrink */
+  padding: 0;
+  /* Reset generic button padding */
+  border-radius: 50%;
+  background: white;
+  border: 1px solid var(--secondary);
+  color: var(--secondary);
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: 10px;
+  vertical-align: middle;
+  flex-shrink: 0;
+  /* Prevent squishing in flex container */
+}
+
+.download-btn-icon:hover {
+  background: #f0f0f0;
+  color: var(--primary-dark);
+  border-color: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.download-btn-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.5;
 }
 
 /* Toasts */
