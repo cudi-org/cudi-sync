@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cudi-sync-v3';
+const CACHE_NAME = 'cudi-sync-v4';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',

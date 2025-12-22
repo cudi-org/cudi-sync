@@ -128,34 +128,51 @@ window.Cudi.manejarMensaje = function (mensaje) {
     switch (mensaje.type) {
         case "start_negotiation":
             if (state.modo === "send") {
-                // --- SECURITY CHECKS (Host Side) ---
+                // Check if room is locally locked (extra safety)
                 if (state.isRoomLocked) {
-                    console.warn("Room is locked. Ignoring join attempt.");
+                    console.warn("Room is locked (local check).");
                     window.Cudi.showToast("Blocked connection attempt (Room Locked).", "error");
                     return;
                 }
-
-                if (window.currentSettings && window.currentSettings.manualApproval) {
-                    const peerName = mensaje.alias || "A new device";
-                    const confirmJoin = confirm(`${peerName} wants to connect to your room. Allow?`);
-                    if (!confirmJoin) {
-                        window.Cudi.showToast("Connection rejected by you.", "info");
-                        // Notify peer of rejection
-                        window.Cudi.enviarSocket({
-                            type: "connection_rejected",
-                            room: state.salaId,
-                            appType: appType,
-                            target: "sender_rejection"
-                        });
-                        return;
-                    }
-                }
-
-                console.log("Starting negotiation via server signal...");
+                console.log("Starting negotiation (Server signal)...");
                 window.Cudi.crearPeer(true);
             } else {
                 if (!state.peer) window.Cudi.crearPeer(false);
             }
+            break;
+
+        case "approval_request":
+            if (state.modo === "send") {
+                const peerName = mensaje.alias || "Guest";
+                // Short timeout to ensure UI is ready? usually fine.
+                setTimeout(() => {
+                    const approved = confirm(`${peerName} wants to join. Approve?`);
+                    window.Cudi.enviarSocket({
+                        type: "approval_response",
+                        peerId: mensaje.peerId,
+                        approved: approved,
+                        room: state.salaId // server might infer, but good to send
+                    });
+                    if (approved) {
+                        window.Cudi.showToast(`Approved ${peerName}.`, "success");
+                    } else {
+                        window.Cudi.showToast(`Rejected ${peerName}.`, "info");
+                    }
+                }, 100);
+            }
+            break;
+
+        case "approved":
+            window.Cudi.showToast("Host approved connection! Joining...", "success");
+            // Server should follow up with joined -> start_negotiation
+            break;
+
+        case "rejected":
+            window.Cudi.showToast("Connection rejected by host.", "error");
+            window.Cudi.toggleLoading(false);
+            alert("Connection rejected by host.");
+            window.location.hash = "";
+            window.location.reload();
             break;
 
         case "signal":
@@ -185,9 +202,10 @@ window.Cudi.manejarMensaje = function (mensaje) {
             break;
 
         case "connection_rejected":
+            // Fallback for old logic if server sends this
             window.Cudi.toggleLoading(false);
-            window.Cudi.showToast("Connection rejected by host.", "error");
-            alert("Connection rejected by host.");
+            window.Cudi.showToast("Connection rejected.", "error");
+            alert("Connection rejected.");
             window.location.hash = "";
             window.location.reload();
             break;

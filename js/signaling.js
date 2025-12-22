@@ -20,7 +20,8 @@ window.Cudi.iniciarConexion = function () {
             type: "join",
             room: state.salaId,
             appType: window.Cudi.appType,
-            alias: localStorage.getItem("cudi_alias") || ""
+            alias: localStorage.getItem("cudi_alias") || "",
+            manualApproval: window.currentSettings ? window.currentSettings.manualApproval : false
         });
 
         if (state.modo === "send") {

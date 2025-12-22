@@ -2,7 +2,7 @@
   "name": "CUDI Sync",
   "short_name": "Sync",
   "description": "Transferencia de archivos P2P",
-  "start_url": "https://cudi-org.github.io/cudi-sync/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#121212",
   "theme_color": "#007bff",

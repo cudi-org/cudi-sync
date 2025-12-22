@@ -194,11 +194,15 @@ if (sendChatBtn && chatInput) {
 
 
 if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js")
-            .then(() => console.log("SW Registrado"))
-            .catch((err) => console.log("SW Falló", err));
-    });
+    if (window.location.protocol.startsWith('http')) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("./service-worker.js")
+                .then(() => console.log("SW Registrado"))
+                .catch((err) => console.log("SW Falló", err));
+        });
+    } else {
+        console.log("Service Worker skipped (running on file:// protocol)");
+    }
 }
 
 window.addEventListener("load", () => {
