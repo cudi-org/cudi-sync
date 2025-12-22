@@ -53,22 +53,18 @@ function crearSala() {
     window.location.hash = `send-${window.Cudi.state.salaId}`;
     iniciarTransferencia();
 
-    // Specific logic for Sender (QR)
+    if (salaStatus) salaStatus.textContent = `Room Code: ${window.Cudi.state.salaId}`;
+
+    // Clear QR
     qrContainer.innerHTML = "";
+
     const urlParaRecibir = `${window.location.origin}${window.location.pathname}#receive-${window.Cudi.state.salaId}`;
     if (typeof QRious !== 'undefined') {
         try {
-            new QRious({
-                element: document.createElement("canvas"),
-                size: 220,
-                value: urlParaRecibir,
-            }).element.style.display = "block";
-            // Append handled by QRious if element passed? 
-            // Wait, previous code was: const qr = new ...; qrContainer.appendChild(qr.element);
             const qr = new QRious({
                 element: document.createElement("canvas"),
                 size: 220,
-                value: urlParaRecibir
+                value: urlParaRecibir,
             });
             qrContainer.appendChild(qr.element);
         } catch (e) {
@@ -84,7 +80,6 @@ function crearSala() {
 function mostrarRecepcion() {
     document.getElementById("recepcion").style.display = "block";
 }
-
 
 function unirseSala() {
     const codigo = document.getElementById("codigoSala").value.trim();
@@ -139,66 +134,7 @@ function iniciarTransferencia() {
 }
 
 
-function crearSala() {
-    const customInput = document.getElementById("customRoomInput");
-    const customCode = customInput.value.trim().toUpperCase();
 
-    if (customCode) {
-        if (/^[A-Z0-9-]{3,15}$/.test(customCode)) {
-            window.Cudi.state.salaId = customCode;
-        } else {
-            window.Cudi.showToast("Invalid code. Use 3-15 alphanumeric chars.", "error");
-            return;
-        }
-    } else {
-        window.Cudi.state.salaId = window.Cudi.generarCodigo();
-    }
-
-    window.Cudi.state.modo = "send";
-    window.location.hash = `send-${window.Cudi.state.salaId}`;
-    iniciarTransferencia();
-
-    if (salaStatus) salaStatus.textContent = `Room Code: ${window.Cudi.state.salaId}`;
-
-    // Clear QR
-    qrContainer.innerHTML = "";
-
-    const urlParaRecibir = `${window.location.origin}${window.location.pathname}#receive-${window.Cudi.state.salaId}`;
-    if (typeof QRious !== 'undefined') {
-        try {
-            const qr = new QRious({
-                element: document.createElement("canvas"),
-                size: 220,
-                value: urlParaRecibir,
-            });
-            qrContainer.appendChild(qr.element);
-        } catch (e) {
-            console.error("QR Error", e);
-            qrContainer.textContent = "Error generating QR";
-        }
-    } else {
-        qrContainer.textContent = "QR Library not loaded.";
-    }
-    window.Cudi.showToast("Room created. Waiting for connection...", "info");
-}
-
-function mostrarRecepcion() {
-    document.getElementById("recepcion").style.display = "block";
-}
-
-
-function unirseSala() {
-    const codigo = document.getElementById("codigoSala").value.trim();
-    if (codigo) {
-        window.Cudi.state.salaId = codigo.toUpperCase();
-        window.Cudi.state.modo = "receive";
-        window.location.hash = `receive-${window.Cudi.state.salaId}`;
-        iniciarTransferencia();
-        window.Cudi.showToast("Joining room...", "info");
-    } else {
-        alert("Please enter a code.");
-    }
-}
 
 // Event Listeners
 if (dropZone) {

@@ -43,41 +43,43 @@ window.Cudi.enviarArchivo = async function () {
     }
 
     let offset = 0;
+    const CHUNK_SIZE = window.Cudi.CHUNK_SIZE || 16384;
+    // Control de flujo: Límite de seguridad para evitar crash
+    const MAX_BUFFERED_AMOUNT = 64 * 1024; // 64 KB
+    // Importante: establecer el umbral para el evento bufferedamountlow
+    state.dataChannel.bufferedAmountLowThreshold = MAX_BUFFERED_AMOUNT / 2;
 
     window.Cudi.showToast(`Sending: ${file.name}...`, "info");
     window.Cudi.displayChatMessage(`Sending file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`, "sent", "You");
 
-    const sendLoop = async () => {
+    try {
         while (offset < file.size) {
-            // Flow control check
-            if (state.dataChannel.bufferedAmount > 16 * 1024 * 1024) {
-                state.dataChannel.onbufferedamountlow = () => {
-                    state.dataChannel.onbufferedamountlow = null;
-                    sendLoop();
-                };
-                return;
+            // Si el buffer está lleno, esperamos
+            if (state.dataChannel.bufferedAmount > MAX_BUFFERED_AMOUNT) {
+                await new Promise(resolve => {
+                    const handler = () => {
+                        state.dataChannel.removeEventListener('bufferedamountlow', handler);
+                        resolve();
+                    };
+                    state.dataChannel.addEventListener('bufferedamountlow', handler);
+                });
             }
 
-            const slice = file.slice(offset, offset + window.Cudi.CHUNK_SIZE);
-            try {
-                const chunk = await slice.arrayBuffer();
-                state.dataChannel.send(chunk);
-            } catch (err) {
-                console.error("Error reading file slice:", err);
-                window.Cudi.showToast("Error reading file.", "error");
-                return;
-            }
-
-            offset += window.Cudi.CHUNK_SIZE;
+            const slice = file.slice(offset, offset + CHUNK_SIZE);
+            const chunk = await slice.arrayBuffer();
+            state.dataChannel.send(chunk);
+            offset += CHUNK_SIZE;
         }
 
         window.Cudi.showToast("File sent successfully!", "success");
         state.archivoParaEnviar = null;
         const fileInput = document.getElementById("fileInput");
         if (fileInput) fileInput.value = "";
-    };
 
-    sendLoop();
+    } catch (err) {
+        console.error("Error sending file:", err);
+        window.Cudi.showToast("Error sending file.", "error");
+    }
 }
 
 window.Cudi.processBuffer = function (data) {

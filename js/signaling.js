@@ -82,6 +82,20 @@ window.Cudi.enviarSocket = function (obj) {
     } else {
         mensajeAEnviar = JSON.stringify(obj);
     }
+
+    // Security Check: Payload Size Limit
+    // 16KB limit to protect signaling server connection
+    const MAX_PAYLOAD_BYTES = 16384;
+    // Using simple length check as rough estimator, or Blob for accuracy if needed. 
+    // TextEncoder is cleaner for bytes.
+    const payloadSize = new TextEncoder().encode(mensajeAEnviar).length;
+
+    if (payloadSize > MAX_PAYLOAD_BYTES) {
+        console.error("Payload too large for signaling server:", payloadSize, "bytes. Dropping message.");
+        // Optional: window.Cudi.showToast("Error: Signal message too large.", "error");
+        return;
+    }
+
     if (state.socket && state.socket.readyState === WebSocket.OPEN) {
         state.socket.send(mensajeAEnviar);
     } else {

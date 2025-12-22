@@ -92,6 +92,12 @@ window.Cudi.displayFileDownload = function (filename, url, type, alias) {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+
+        // Memory cleanup: Revoke the URL after download starts
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+            console.log("Memory freed: URL revoked");
+        }, 10000); // Wait 10s to ensure download started
     };
 
     wrapper.appendChild(btn);
