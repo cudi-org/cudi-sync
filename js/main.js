@@ -420,8 +420,8 @@ if (aliasInput) {
 // Auto Clear on Exit
 window.addEventListener("beforeunload", () => {
     if (window.currentSettings && window.currentSettings.autoClear) {
-        // Logic for auto clear can be complex on beforeunload, often ignored by browsers
-        // But keeping existing logic if any
+        localStorage.clear();
+        sessionStorage.clear();
     }
 });
 
