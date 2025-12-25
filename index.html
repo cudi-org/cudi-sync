@@ -61,13 +61,13 @@
       <div class="entry-controls"
         style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px; align-items: center;">
         <div style="display: flex; gap: 10px; width: 100%; max-width: 300px;">
-          <input type="text" id="aliasInput" placeholder="Your Alias (Name)" style="width: 100%;">
+          <input type="text" id="aliasInput" placeholder="Your Alias (Name)" style="width: 100%;" autocomplete="off">
         </div>
         <input type="text" id="customRoomInput" placeholder="Custom Code (Optional)"
-          style="width: 100%; max-width: 300px; text-align: center;">
+          style="width: 100%; max-width: 300px; text-align: center;" autocomplete="off">
       </div>
       <div id="recepcion" style="width: 100%; display: none">
-        <input type="text" id="codigoSala" placeholder="Enter Room Code" />
+        <input type="text" id="codigoSala" placeholder="Enter Room Code" autocomplete="off" />
         <button id="unirseBtn">Join</button>
       </div>
     </div>
@@ -110,7 +110,7 @@
       <div id="chatContainer">
         <div id="messagesDisplay"></div>
         <div id="chatInputContainer">
-          <input type="text" id="chatInput" placeholder="Type a message..." disabled />
+          <input type="text" id="chatInput" placeholder="Type a message..." disabled autocomplete="off" />
           <button id="sendChatBtn" disabled aria-label="Send message">
             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
               <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
@@ -183,7 +183,7 @@
           <option value="custom">Custom (Manual)</option>
         </select>
         <input type="text" id="custom-stun-input" placeholder="stun:your.server.com:3478"
-          style="display: none; margin-top: 5px;" />
+          style="display: none; margin-top: 5px;" autocomplete="off" />
         <p class="setting-desc">Server used to establish the P2P connection (IP discovery).</p>
       </div>
 

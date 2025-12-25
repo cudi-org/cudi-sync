@@ -8,7 +8,7 @@ window.Cudi.crearPeer = function (isOffer) {
 
     if (!state.peer || state.peer.connectionState === 'closed' || state.peer.connectionState === 'failed') {
         // Reset peer alias logic
-        state.peerAlias = null;
+        state.remoteAlias = null;
         const mon = document.getElementById("connection-monitor");
         if (mon) mon.textContent = "Initializing...";
 
@@ -37,6 +37,8 @@ window.Cudi.crearPeer = function (isOffer) {
                     mon.textContent = "Disconnected";
                     mon.classList.remove("active");
                 }
+                const statusEl = document.getElementById("status");
+                if (statusEl) statusEl.textContent = "Disconnected";
 
                 if (state.modo === "receive") {
                     window.Cudi.showToast("Sender disconnected. Session ended for privacy.", "error");
@@ -60,6 +62,8 @@ window.Cudi.crearPeer = function (isOffer) {
                         }
                     }, 2000);
                 }
+                const statusEl = document.getElementById("status");
+                if (statusEl) statusEl.textContent = "P2P Connected. Waiting for channel...";
             }
         };
 
@@ -103,7 +107,7 @@ window.Cudi.setupDataChannel = function (channel) {
         window.Cudi.toggleLoading(false);
 
         // Send Profile (Alias) immediately
-        const myAlias = localStorage.getItem("cudi_alias") || "";
+        const myAlias = state.localAlias;
         if (myAlias) {
             state.dataChannel.send(JSON.stringify({ type: "profile", alias: myAlias }));
         }
@@ -112,6 +116,9 @@ window.Cudi.setupDataChannel = function (channel) {
             state.enviarArchivoPendiente = false;
             window.Cudi.enviarArchivo();
         }
+
+        const statusEl = document.getElementById("status");
+        if (statusEl) statusEl.textContent = "Ready to Transfer";
     };
     state.dataChannel.onclose = () => {
         window.Cudi.showToast("Data channel closed.", "info");
@@ -232,8 +239,8 @@ function manejarChunk(data) {
             } else if (msg.type === "profile") {
                 // Peer sent their alias
                 const peerAlias = msg.alias;
-                if (peerAlias) {
-                    state.peerAlias = peerAlias;
+                if (peerAlias && peerAlias !== state.remoteAlias) {
+                    state.remoteAlias = peerAlias;
                     window.Cudi.showToast(`${peerAlias} joined the room.`, "info");
                     const mon = document.getElementById("connection-monitor");
                     if (mon) mon.textContent = `Connected: ${peerAlias}`;

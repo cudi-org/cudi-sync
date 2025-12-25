@@ -15,6 +15,8 @@ window.Cudi.state = {
     tamañoArchivoEsperado: 0,
     nombreArchivoRecibido: "",
     heartbeatInterval: null,
+    localAlias: localStorage.getItem('cudi_alias') || "You",
+    remoteAlias: null,
 };
 
 // Initial settings load

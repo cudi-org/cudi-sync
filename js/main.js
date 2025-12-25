@@ -216,9 +216,9 @@ if (sendChatBtn && chatInput) {
         const message = chatInput.value.trim();
         const state = window.Cudi.state;
         if (message && state.dataChannel && state.dataChannel.readyState === "open") {
-            const myAlias = localStorage.getItem("cudi_alias") || "";
+            const myAlias = state.localAlias;
             state.dataChannel.send(JSON.stringify({ type: "chat", message: message, alias: myAlias }));
-            window.Cudi.displayChatMessage(message, "sent", "You");
+            window.Cudi.displayChatMessage(message, "sent", myAlias);
             chatInput.value = "";
         }
     });
@@ -470,6 +470,7 @@ if (aliasInput) {
     aliasInput.value = localStorage.getItem("cudi_alias") || "";
     aliasInput.addEventListener("change", () => {
         localStorage.setItem("cudi_alias", aliasInput.value);
+        window.Cudi.state.localAlias = aliasInput.value;
     });
 }
 
