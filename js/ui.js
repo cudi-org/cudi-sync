@@ -24,19 +24,28 @@ window.Cudi.displayChatMessage = function (message, type, alias) {
 
     const p = document.createElement("p");
 
-    if (alias === "System") {
+    // Determine info to show
+    let displayAlias = alias;
+    // Fallback if empty
+    if (!displayAlias || displayAlias.trim() === "") {
+        displayAlias = (type === "sent") ? "You" : "Guest";
+    }
+
+    if (displayAlias === "System") {
         p.classList.add("system-message");
         p.textContent = message;
     } else {
-        if (alias && alias.trim() !== "") {
-            const userSpan = document.createElement("strong");
-            userSpan.textContent = alias;
-            userSpan.style.display = "block";
-            userSpan.style.fontSize = "0.8rem";
-            userSpan.style.marginBottom = "2px";
-            userSpan.style.color = (type === "sent") ? "#eee" : "#555";
-            p.appendChild(userSpan);
-        }
+        // Always show the Name for clarity in chatting
+        const userSpan = document.createElement("strong");
+        userSpan.textContent = displayAlias;
+        userSpan.style.display = "block";
+        userSpan.style.fontSize = "0.75rem";
+        userSpan.style.marginBottom = "4px";
+        userSpan.style.opacity = "0.8";
+        // Sent messages header lighter, Received darker (or logic from styles)
+        userSpan.style.color = (type === "sent") ? "#f0f0f0" : "#555";
+        p.appendChild(userSpan);
+
         const msgSpan = document.createElement("span");
         msgSpan.textContent = message;
         p.appendChild(msgSpan);
@@ -53,12 +62,18 @@ window.Cudi.displayFileDownload = function (filename, url, type, alias) {
 
     const p = document.createElement("p");
 
-    if (alias && alias !== "System") {
+    // Determine info to show
+    let displayAlias = alias;
+    if (!displayAlias || displayAlias.trim() === "") {
+        displayAlias = (type === "sent") ? "You" : "Guest";
+    }
+
+    if (displayAlias && displayAlias !== "System") {
         const userSpan = document.createElement("strong");
-        userSpan.textContent = alias;
+        userSpan.textContent = displayAlias;
         userSpan.style.display = "block";
-        userSpan.style.fontSize = "0.8rem";
-        userSpan.style.marginBottom = "2px";
+        userSpan.style.fontSize = "0.75rem";
+        userSpan.style.marginBottom = "4px";
         userSpan.style.color = (type === "sent") ? "#eee" : "#555";
         p.appendChild(userSpan);
     }

@@ -906,4 +906,10 @@ input:checked+.slider:before {
     width: 100%;
     justify-content: space-between;
   }
+}/* Room Code Display */
+.room-code-display {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary-dark);
+    letter-spacing: 1px;
 }

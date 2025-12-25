@@ -78,7 +78,16 @@
         <input type="file" id="fileInput" hidden />
       </div>
 
-      <div id="salaStatus">Room: —</div>
+      <div id="salaStatusContainer"
+        style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px;">
+        <div id="salaStatus" class="room-code-display">Room: —</div>
+        <button id="copy-link-btn" class="icon-btn" title="Copy Join Link" style="display: none;">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+          </svg>
+        </button>
+      </div>
       <div id="room-controls" class="room-controls">
         <div class="control-group left">
           <button id="lock-room-btn" class="icon-btn" title="Lock Room">
@@ -166,10 +175,15 @@
       <div class="settings-group">
         <label for="stun-select">STUN Server:</label>
         <select id="stun-select">
-          <option value="google">Google Default</option>
-          <option value="mozilla">Mozilla Services</option>
-          <option value="none">None (Local Network Only)</option>
+          <option value="google">Google (Default) - Max Speed</option>
+          <option value="cloudflare">Cloudflare - Speed & Privacy</option>
+          <option value="mozilla">Mozilla - Privacy Focused</option>
+          <option value="twilio">Twilio - Reliability</option>
+          <option value="none">None - Local Network Only</option>
+          <option value="custom">Custom (Manual)</option>
         </select>
+        <input type="text" id="custom-stun-input" placeholder="stun:your.server.com:3478"
+          style="display: none; margin-top: 5px;" />
         <p class="setting-desc">Server used to establish the P2P connection (IP discovery).</p>
       </div>
 
@@ -217,6 +231,7 @@
   <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
   <script src="./js/config.js"></script>
   <!-- Application Scripts (Non-Module for file:// support) -->
+  <script src="js/dictionary.js"></script>
   <script src="js/state.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/ui.js"></script>

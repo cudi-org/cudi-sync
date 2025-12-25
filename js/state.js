@@ -29,11 +29,19 @@ window.Cudi.LOADED_SETTINGS = loaded;
 
 window.Cudi.STUN_SERVERS_MAP = {
     "google": [{ urls: "stun:stun.l.google.com:19302" }],
+    "cloudflare": [{ urls: "stun:stun.cloudflare.com:3478" }],
     "mozilla": [{ urls: "stun:stun.services.mozilla.com" }],
-    "none": []
+    "twilio": [{ urls: "stun:global.stun.twilio.com:3478" }],
+    "none": [],
+    "custom": [] // Will be populated dynamically if selected
 };
 
-const settingsIce = window.Cudi.STUN_SERVERS_MAP[window.Cudi.LOADED_SETTINGS.stun] || window.Cudi.STUN_SERVERS_MAP["google"];
+let settingsIce;
+if (window.Cudi.LOADED_SETTINGS.stun === 'custom' && window.Cudi.LOADED_SETTINGS.customStun) {
+    settingsIce = [{ urls: window.Cudi.LOADED_SETTINGS.customStun }];
+} else {
+    settingsIce = window.Cudi.STUN_SERVERS_MAP[window.Cudi.LOADED_SETTINGS.stun] || window.Cudi.STUN_SERVERS_MAP["google"];
+}
 
 window.Cudi.ICE_SERVERS = (typeof CONFIG !== 'undefined' && CONFIG.ICE_SERVERS)
     ? CONFIG.ICE_SERVERS

@@ -35,6 +35,9 @@ window.Cudi.toggleLoading = function (show, message = "Loading...") {
     }
 }
 
+
 window.Cudi.generarCodigo = function () {
-    return Math.random().toString(36).substring(2, 8).toUpperCase();
+    const { ADJECTIVES, COLORS, ANIMALS } = window.Cudi.DICTIONARY;
+    const pick = (list) => list[Math.floor(Math.random() * list.length)];
+    return `${pick(ADJECTIVES)}-${pick(COLORS)}-${pick(ANIMALS)}`;
 }

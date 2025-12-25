@@ -36,13 +36,13 @@ const closeModal = document.getElementById("close-modal");
 
 function crearSala() {
     const customInput = document.getElementById("customRoomInput");
-    const customCode = customInput.value.trim().toUpperCase();
+    const customCode = customInput.value.trim().toLowerCase();
 
     if (customCode) {
-        if (/^[A-Z0-9-]{3,15}$/.test(customCode)) {
+        if (/^[a-z0-9-]{3,40}$/.test(customCode)) {
             window.Cudi.state.salaId = customCode;
         } else {
-            window.Cudi.showToast("Invalid code. Use 3-15 alphanumeric chars.", "error");
+            window.Cudi.showToast("Invalid code. Use 3-40 alphanumeric chars.", "error");
             return;
         }
     } else {
@@ -53,7 +53,27 @@ function crearSala() {
     window.location.hash = `send-${window.Cudi.state.salaId}`;
     iniciarTransferencia();
 
-    if (salaStatus) salaStatus.textContent = `Room Code: ${window.Cudi.state.salaId}`;
+    if (salaStatus) salaStatus.textContent = window.Cudi.state.salaId;
+
+    // Copy Link Button Logic
+    const copyLinkBtn = document.getElementById("copy-link-btn");
+    if (copyLinkBtn) {
+        copyLinkBtn.style.display = "inline-flex";
+
+        // Remove old listeners to prevent multiple toggles if re-running
+        const newBtn = copyLinkBtn.cloneNode(true);
+        copyLinkBtn.parentNode.replaceChild(newBtn, copyLinkBtn);
+
+        newBtn.addEventListener("click", () => {
+            const url = window.location.href.replace("send-", "receive-"); // Simple approximation
+            // Ideally we get the full tokenified URL if server provided one, otherwise normal link
+            navigator.clipboard.writeText(url).then(() => {
+                window.Cudi.showToast("Link copied to clipboard!", "success");
+            }).catch(err => {
+                console.error('Could not copy text: ', err);
+            });
+        });
+    }
 
     // Clear QR
     qrContainer.innerHTML = "";
@@ -84,7 +104,7 @@ function mostrarRecepcion() {
 function unirseSala() {
     const codigo = document.getElementById("codigoSala").value.trim();
     if (codigo) {
-        window.Cudi.state.salaId = codigo.toUpperCase();
+        window.Cudi.state.salaId = codigo.toLowerCase();
         window.Cudi.state.modo = "receive";
         window.location.hash = `receive-${window.Cudi.state.salaId}`;
         iniciarTransferencia();
@@ -100,7 +120,26 @@ function iniciarTransferencia() {
     document.getElementById("zonaTransferencia").style.display = "block";
 
     if (returnBtn) returnBtn.style.display = "flex";
-    if (salaStatus) salaStatus.textContent = `Room: ${window.Cudi.state.salaId}`;
+    if (salaStatus) salaStatus.textContent = window.Cudi.state.salaId;
+
+    const copyLinkBtn = document.getElementById("copy-link-btn");
+    if (copyLinkBtn) {
+        copyLinkBtn.style.display = "inline-flex";
+
+        // Remove old listeners
+        const newBtn = copyLinkBtn.cloneNode(true);
+        copyLinkBtn.parentNode.replaceChild(newBtn, copyLinkBtn);
+
+        newBtn.addEventListener("click", () => {
+            const url = window.location.href.replace("send-", "receive-").replace("#receive-", "#receive-");
+            // Logic to ensure it's a receive link mostly handled by current URL if state is receive
+            navigator.clipboard.writeText(url).then(() => {
+                window.Cudi.showToast("Link copied to clipboard!", "success");
+            }).catch(err => {
+                console.error('Could not copy text: ', err);
+            });
+        });
+    }
 
     document.querySelector('.container').classList.add('glass');
 
@@ -209,10 +248,10 @@ window.addEventListener("load", () => {
     if (window.location.hash) {
         const hash = window.location.hash.substring(1);
         if (hash.startsWith("send-")) {
-            window.Cudi.state.salaId = hash.replace("send-", "").toUpperCase();
+            window.Cudi.state.salaId = hash.replace("send-", "").toLowerCase();
             window.Cudi.state.modo = "send";
             iniciarTransferencia();
-            if (salaStatus) salaStatus.textContent = `Room Code: ${window.Cudi.state.salaId}`;
+            if (salaStatus) salaStatus.textContent = window.Cudi.state.salaId;
             // Re-gen QR if needed
             const urlParaRecibir = `${window.location.origin}${window.location.pathname}#receive-${window.Cudi.state.salaId}`;
             if (qrContainer && typeof QRious !== 'undefined') {
@@ -226,7 +265,7 @@ window.addEventListener("load", () => {
             }
 
         } else if (hash.startsWith("receive-")) {
-            window.Cudi.state.salaId = hash.replace("receive-", "").toUpperCase();
+            window.Cudi.state.salaId = hash.replace("receive-", "").toLowerCase();
             window.Cudi.state.modo = "receive";
             iniciarTransferencia();
             const recepcion = document.getElementById("recepcion");
@@ -307,7 +346,6 @@ const lockRoomBtnLogic = document.getElementById("lock-room-btn");
 if (lockRoomBtnLogic) {
     lockRoomBtnLogic.addEventListener("click", () => {
         window.Cudi.state.isRoomLocked = !window.Cudi.state.isRoomLocked;
-        lockRoomBtnLogic.textContent = window.Cudi.state.isRoomLocked ? "Unlock Room" : "Lock Room";
         lockRoomBtnLogic.classList.toggle("locked", window.Cudi.state.isRoomLocked);
         window.Cudi.showToast(window.Cudi.state.isRoomLocked ? "Room Locked. New connections filtered." : "Room Unlocked.", "info");
     });
@@ -366,9 +404,26 @@ window.currentSettings = loadSettings();
 if (settingsBtn && settingsModal && closeSettingsModal && saveSettingsBtn) {
     const manualApprovalToggle = document.getElementById("manual-approval-toggle");
     const autoClearToggle = document.getElementById("auto-clear-toggle");
+    const customStunInput = document.getElementById("custom-stun-input");
+
+    // Toggle custom input visibility
+    stunSelect.addEventListener("change", () => {
+        if (stunSelect.value === "custom") {
+            if (customStunInput) customStunInput.style.display = "block";
+        } else {
+            if (customStunInput) customStunInput.style.display = "none";
+        }
+    });
 
     settingsBtn.addEventListener("click", () => {
         stunSelect.value = window.currentSettings.stun || "google";
+
+        // Init custom input state
+        if (customStunInput) {
+            customStunInput.value = window.currentSettings.customStun || "";
+            customStunInput.style.display = (stunSelect.value === "custom") ? "block" : "none";
+        }
+
         filesizeSelect.value = window.currentSettings.maxFileSize || "0";
         manualApprovalToggle.checked = window.currentSettings.manualApproval || false;
         autoClearToggle.checked = window.currentSettings.autoClear !== false;
@@ -398,6 +453,7 @@ if (settingsBtn && settingsModal && closeSettingsModal && saveSettingsBtn) {
     saveSettingsBtn.addEventListener("click", () => {
         const newSettings = {
             stun: stunSelect.value,
+            customStun: (customStunInput && stunSelect.value === "custom") ? customStunInput.value.trim() : "",
             maxFileSize: filesizeSelect.value,
             manualApproval: manualApprovalToggle.checked,
             autoClear: autoClearToggle.checked

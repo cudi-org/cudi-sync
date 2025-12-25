@@ -7,6 +7,11 @@ window.Cudi.crearPeer = function (isOffer) {
     }
 
     if (!state.peer || state.peer.connectionState === 'closed' || state.peer.connectionState === 'failed') {
+        // Reset peer alias logic
+        state.peerAlias = null;
+        const mon = document.getElementById("connection-monitor");
+        if (mon) mon.textContent = "Initializing...";
+
         // Dynamic load of current STUN settings
         const currentStun = window.currentSettings?.stun || "google";
         const dynamicIceServers = window.Cudi.STUN_SERVERS_MAP[currentStun] || window.Cudi.STUN_SERVERS_MAP["google"];
@@ -228,6 +233,7 @@ function manejarChunk(data) {
                 // Peer sent their alias
                 const peerAlias = msg.alias;
                 if (peerAlias) {
+                    state.peerAlias = peerAlias;
                     window.Cudi.showToast(`${peerAlias} joined the room.`, "info");
                     const mon = document.getElementById("connection-monitor");
                     if (mon) mon.textContent = `Connected: ${peerAlias}`;
