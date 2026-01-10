@@ -482,3 +482,32 @@ window.addEventListener("beforeunload", () => {
     }
 });
 
+// Video Call Logic
+const btnStartVideo = document.getElementById("btnStartVideo");
+const btnStopVideo = document.getElementById("btnStopVideo");
+const btnShareScreen = document.getElementById("btnShareScreen");
+const btnToggleAudio = document.getElementById("btnToggleAudio");
+
+if (btnStartVideo) {
+    btnStartVideo.addEventListener("click", () => {
+        window.Cudi.startVideo();
+    });
+}
+
+if (btnStopVideo) {
+    btnStopVideo.addEventListener("click", () => {
+        window.Cudi.stopVideo();
+    });
+}
+
+if (btnShareScreen) {
+    btnShareScreen.addEventListener("click", () => {
+        window.Cudi.startScreenShare();
+    });
+}
+
+if (btnToggleAudio) {
+    btnToggleAudio.addEventListener("click", () => {
+        window.Cudi.toggleAudio();
+    });
+}

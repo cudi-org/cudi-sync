@@ -73,6 +73,34 @@
     </div>
 
     <div id="zonaTransferencia" style="display: none; width: 100%">
+
+      <!-- Sync Live Video Container -->
+      <div id="videoContainer" style="display: none; margin-bottom: 20px;">
+        <div
+          style="position: relative; width: 100%; aspect-ratio: 16/9; background: #1a1a1a; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+          <video id="remoteVideo" autoplay playsinline
+            style="width: 100%; height: 100%; object-fit: cover; background: #000;"></video>
+          <video id="localVideo" autoplay playsinline muted
+            style="position: absolute; bottom: 20px; right: 20px; width: 150px; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; border: 2px solid rgba(255,255,255,0.5); box-shadow: 0 4px 10px rgba(0,0,0,0.3); background: #333;"></video>
+
+          <div
+            style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 10; padding: 10px; border-radius: 20px; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
+            <button id="btnToggleAudio" class="icon-btn glass-btn" title="Mute/Unmute"
+              style="width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 1.2rem;">
+              🎤
+            </button>
+            <button id="btnStopVideo" class="icon-btn glass-btn" title="Hang Up"
+              style="width: 40px; height: 40px; padding: 0; border-radius: 50%; background: #dc3545; color: white; font-size: 1.2rem;">
+              🛑
+            </button>
+            <button id="btnShareScreen" class="icon-btn glass-btn" title="Share Screen"
+              style="width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 1.2rem;">
+              🖥️
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div class="drop-area" id="dropZone" tabindex="0" role="button" aria-label="Zone to upload files">
         <p>Drag & Drop files here or click to select</p>
         <input type="file" id="fileInput" hidden />
@@ -89,13 +117,22 @@
         </button>
       </div>
       <div id="room-controls" class="room-controls">
-        <div class="control-group left">
+        <div class="control-group left" style="display: flex; gap: 10px; align-items: center;">
           <button id="lock-room-btn" class="icon-btn" title="Lock Room">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
           </button>
+
+          <button id="btnStartVideo" class="icon-btn" title="Start Call"
+            style="background: #28a745; border: none; color: white;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 7l-7 5 7 5V7z"></path>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+            </svg>
+          </button>
+
           <span id="connection-monitor" class="monitor-text">Initializing...</span>
         </div>
         <div class="control-group right">

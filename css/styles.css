@@ -913,3 +913,49 @@ input:checked+.slider:before {
     color: var(--primary-dark);
     letter-spacing: 1px;
 }
+
+/* Sync Live Video Styles */
+#videoContainer {
+    transition: all 0.5s ease;
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.glass-btn {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: white;
+    transition: all 0.2s ease;
+}
+
+.glass-btn:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
+}
+
+.glass-btn:active {
+    transform: scale(0.95);
+}
+
+/* Ensure video call buttons in room-controls align well */
+.room-controls .icon-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+#btnStartVideo:hover {
+    background: #218838 !important;
+    box-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
+    transform: scale(1.1);
+}
+

@@ -70,6 +70,15 @@ window.Cudi.crearPeer = function (isOffer) {
         state.peer.ondatachannel = (event) => {
             window.Cudi.setupDataChannel(event.channel);
         };
+
+        state.peer.ontrack = (event) => {
+            console.log("Track received:", event.track.kind);
+            const remoteVideo = document.getElementById("remoteVideo");
+            if (remoteVideo && event.streams[0]) {
+                remoteVideo.srcObject = event.streams[0];
+                document.getElementById("videoContainer").style.display = "block";
+            }
+        };
     }
 
     if (isOffer) {
@@ -260,3 +269,134 @@ function manejarChunk(data) {
         }
     }
 }
+
+/* ===========================
+   Sync Live (Video/Screen)
+   =========================== */
+
+window.Cudi.localStream = null;
+
+window.Cudi.renegotiate = async function () {
+    const state = window.Cudi.state;
+    if (!state.peer) return;
+    try {
+        const offer = await state.peer.createOffer();
+        await state.peer.setLocalDescription(offer);
+        window.Cudi.enviarSocket({
+            tipo: 'oferta',
+            oferta: state.peer.localDescription,
+            sala: state.salaId
+        });
+    } catch (e) {
+        console.error('Renegotiation failed', e);
+    }
+};
+
+window.Cudi.startVideo = async function () {
+    const state = window.Cudi.state;
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        window.Cudi.localStream = stream;
+
+        const localVideo = document.getElementById('localVideo');
+        if (localVideo) {
+            localVideo.srcObject = stream;
+            localVideo.muted = true;
+            document.getElementById('videoContainer').style.display = 'block';
+        }
+
+        if (state.peer) {
+            stream.getTracks().forEach(track => {
+               const senders = state.peer.getSenders();
+               const existingSender = senders.find(s => s.track && s.track.kind === track.kind);
+               if (existingSender) {
+                   existingSender.replaceTrack(track);
+               } else {
+                   state.peer.addTrack(track, stream);
+               }
+            });
+            window.Cudi.renegotiate();
+        }
+        
+        const btnStart = document.getElementById('btnStartVideo');
+        if (btnStart) btnStart.style.display = 'none';
+        
+    } catch (err) {
+        console.error('Error accessing media devices: ', err);
+        window.Cudi.showToast('Cannot access camera/microphone.', 'error');
+    }
+};
+
+window.Cudi.stopVideo = function () {
+    const state = window.Cudi.state;
+    if (window.Cudi.localStream) {
+        window.Cudi.localStream.getTracks().forEach(track => {
+            track.stop();
+            if (state.peer) {
+                const senders = state.peer.getSenders();
+                const sender = senders.find(s => s.track === track);
+                if (sender) {
+                    try { state.peer.removeTrack(sender); } catch(e) {}
+                }
+            }
+        });
+        window.Cudi.localStream = null;
+    }
+
+    document.getElementById('videoContainer').style.display = 'none';
+    const btnStart = document.getElementById('btnStartVideo');
+    if (btnStart) btnStart.style.display = 'inline-flex';
+    
+    window.Cudi.renegotiate();
+};
+
+window.Cudi.startScreenShare = async function () {
+    const state = window.Cudi.state;
+    if (!state.peer) {
+        window.Cudi.showToast('No active connection.', 'error');
+        return;
+    }
+    
+    try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        const videoTrack = screenStream.getVideoTracks()[0];
+
+        const sender = state.peer.getSenders().find(s => s.track && s.track.kind === 'video');
+        
+        if (sender) {
+            sender.replaceTrack(videoTrack);
+        } else {
+            state.peer.addTrack(videoTrack, screenStream);
+            window.Cudi.renegotiate();
+        }
+
+        document.getElementById('localVideo').srcObject = screenStream;
+
+        videoTrack.onended = () => {
+            if (window.Cudi.localStream) {
+                const camTrack = window.Cudi.localStream.getVideoTracks()[0];
+                if (sender) sender.replaceTrack(camTrack);
+                document.getElementById('localVideo').srcObject = window.Cudi.localStream;
+            } else {
+                if (sender) try { state.peer.removeTrack(sender); } catch(e) {}
+                window.Cudi.stopVideo(); 
+                window.Cudi.renegotiate();
+            }
+        };
+
+    } catch (err) {
+        console.error('Error sharing screen: ', err);
+    }
+};
+
+window.Cudi.toggleAudio = function () {
+    if (window.Cudi.localStream) {
+        const audioTrack = window.Cudi.localStream.getAudioTracks()[0];
+        if (audioTrack) {
+            audioTrack.enabled = !audioTrack.enabled;
+            const btn = document.querySelector('#btnToggleAudio');
+            if (btn) btn.textContent = audioTrack.enabled ? '??' : '??';
+        }
+    }
+};
+
