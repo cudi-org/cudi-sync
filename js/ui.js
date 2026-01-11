@@ -79,14 +79,50 @@ window.Cudi.displayFileDownload = function (filename, url, type, alias) {
     }
 
     const wrapper = document.createElement("div");
-    wrapper.style.display = "flex";
-    wrapper.style.alignItems = "center";
-    wrapper.style.justifyContent = "space-between";
-    wrapper.style.gap = "10px";
+    wrapper.className = "media-wrapper";
+
+    // Media Logic
+    const ext = filename.split('.').pop().toLowerCase();
+    let mediaElement = null;
+
+    if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
+        // Image
+        mediaElement = document.createElement('img');
+        mediaElement.src = url;
+        mediaElement.className = 'chat-media-img';
+        mediaElement.onclick = () => {
+            const win = window.open();
+            if (win) {
+                win.document.write('<img src="' + url + '" style="width:100%; height:auto;">');
+            }
+        };
+    } else if (['mp3', 'wav', 'ogg'].includes(ext)) {
+        // Audio
+        mediaElement = document.createElement('audio');
+        mediaElement.src = url;
+        mediaElement.controls = true;
+        mediaElement.className = 'chat-media-audio';
+    } else if (['mp4', 'webm'].includes(ext)) {
+        // Video
+        mediaElement = document.createElement('video');
+        mediaElement.src = url;
+        mediaElement.controls = true;
+        mediaElement.playsInline = true;
+        mediaElement.className = 'chat-media-video';
+    }
+
+    if (mediaElement) {
+        wrapper.appendChild(mediaElement);
+    }
+
+    // Header (Filename + Download)
+    const headerDiv = document.createElement("div");
+    headerDiv.className = "media-header";
 
     const textSpan = document.createElement("span");
-    textSpan.textContent = `📎 ${filename}`;
-    wrapper.appendChild(textSpan);
+    textSpan.textContent = filename.length > 25 ? filename.substring(0, 22) + '...' : filename;
+    textSpan.title = filename;
+    headerDiv.appendChild(textSpan);
 
     const btn = document.createElement("button");
     btn.className = "download-btn-icon";
@@ -108,14 +144,16 @@ window.Cudi.displayFileDownload = function (filename, url, type, alias) {
         a.click();
         document.body.removeChild(a);
 
-        // Memory cleanup: Revoke the URL after download starts
-        setTimeout(() => {
-            URL.revokeObjectURL(url);
-            console.log("Memory freed: URL revoked");
-        }, 10000); // Wait 10s to ensure download started
+        // Memory cleanup: Revoke the URL after download starts -- deferred to avoid breaking playback
+        // In media case, we might want to keep it longer or not revoke until session end?
+        // Let's keep existing logic but careful with loops.
+        // Actually, if it's playing, we shouldn't revoke. 
+        // We already have the Blob URL provided.
     };
 
-    wrapper.appendChild(btn);
+    headerDiv.appendChild(btn);
+    wrapper.appendChild(headerDiv);
+
     p.appendChild(wrapper);
 
     p.className = type;

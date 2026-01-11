@@ -88,7 +88,7 @@ window.Cudi.processBuffer = function (data) {
     const receivedSize = state.archivoRecibidoBuffers.reduce((acc, b) => acc + b.byteLength, 0);
 
     if (receivedSize >= state.tamañoArchivoEsperado) {
-        const blob = new Blob(state.archivoRecibidoBuffers);
+        const blob = new Blob(state.archivoRecibidoBuffers, { type: state.tipoMimeRecibido || '' });
         state.archivoRecibidoBuffers = [];
 
         const url = URL.createObjectURL(blob);

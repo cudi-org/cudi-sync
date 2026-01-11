@@ -487,6 +487,7 @@ const btnStartVideo = document.getElementById("btnStartVideo");
 const btnStopVideo = document.getElementById("btnStopVideo");
 const btnShareScreen = document.getElementById("btnShareScreen");
 const btnToggleAudio = document.getElementById("btnToggleAudio");
+const btnToggleVideo = document.getElementById("btnToggleVideo");
 
 if (btnStartVideo) {
     btnStartVideo.addEventListener("click", () => {
@@ -509,5 +510,11 @@ if (btnShareScreen) {
 if (btnToggleAudio) {
     btnToggleAudio.addEventListener("click", () => {
         window.Cudi.toggleAudio();
+    });
+}
+
+if (btnToggleVideo) {
+    btnToggleVideo.addEventListener("click", () => {
+        window.Cudi.toggleVideo();
     });
 }

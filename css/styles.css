@@ -906,56 +906,111 @@ input:checked+.slider:before {
     width: 100%;
     justify-content: space-between;
   }
-}/* Room Code Display */
+}
+
+/* Room Code Display */
 .room-code-display {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--primary-dark);
-    letter-spacing: 1px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--primary-dark);
+  letter-spacing: 1px;
 }
 
 /* Sync Live Video Styles */
 #videoContainer {
-    transition: all 0.5s ease;
-    animation: fadeIn 0.5s ease-out;
+  transition: all 0.5s ease;
+  animation: fadeIn 0.5s ease-out;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .glass-btn {
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(5px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    color: white;
-    transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  transition: all 0.2s ease;
 }
 
 .glass-btn:hover {
-    background: rgba(255, 255, 255, 0.4);
-    transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(1.1);
 }
 
 .glass-btn:active {
-    transform: scale(0.95);
+  transform: scale(0.95);
 }
 
 /* Ensure video call buttons in room-controls align well */
 .room-controls .icon-btn {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    transition: all 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
 }
 
 #btnStartVideo:hover {
-    background: #218838 !important;
-    box-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
-    transform: scale(1.1);
+  background: #218838 !important;
+  box-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
+  transform: scale(1.1);
 }
 
+/* Multimedia Chat Bubbles */
+.media-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.media-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.chat-media-img {
+  max-width: 100%;
+  max-height: 250px;
+  width: auto;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  object-fit: contain;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.chat-media-img:hover {
+  transform: scale(1.02);
+}
+
+.chat-media-audio {
+  width: 100%;
+  min-width: 200px;
+  height: 40px;
+  border-radius: 20px;
+  margin-top: 5px;
+}
+
+.chat-media-video {
+  width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  background: black;
+  outline: none;
+}
