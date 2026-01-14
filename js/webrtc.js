@@ -311,8 +311,16 @@ window.Cudi.startVideo = async function () {
             if (localVideoPlaceholder) localVideoPlaceholder.style.display = 'none';
         }
 
-        if (btnToggleAudio) btnToggleAudio.textContent = '🎤';
-        if (btnToggleVideo) btnToggleVideo.textContent = '📹';
+        if (btnToggleAudio) {
+            btnToggleAudio.innerHTML = ICONS.micOn;
+            btnToggleAudio.style.backgroundColor = '';
+            btnToggleAudio.style.color = '';
+        }
+        if (btnToggleVideo) {
+            btnToggleVideo.innerHTML = ICONS.videoOn;
+            btnToggleVideo.style.backgroundColor = '';
+            btnToggleVideo.style.color = '';
+        }
 
         if (state.peer) {
             stream.getTracks().forEach(track => {
@@ -369,7 +377,13 @@ window.Cudi.startScreenShare = async function () {
         return;
     }
 
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        window.Cudi.showToast('Screen sharing not supported on this device.', 'error');
+        return;
+    }
+
     try {
+        // Mobile browsers might behave differently, simple constraint is best
         const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
         const videoTrack = screenStream.getVideoTracks()[0];
 
@@ -398,7 +412,21 @@ window.Cudi.startScreenShare = async function () {
 
     } catch (err) {
         console.error('Error sharing screen: ', err);
+        if (err.name === 'NotAllowedError') {
+            window.Cudi.showToast('Screen sharing permission denied.', 'error');
+        } else if (err.name === 'NotFoundError') {
+            window.Cudi.showToast('No screen found to share.', 'error');
+        } else {
+            window.Cudi.showToast('Screen share failed: ' + err.message, 'error');
+        }
     }
+};
+
+const ICONS = {
+    micOn: '<svg name="mic-on" viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>',
+    micOff: '<svg name="mic-off" viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-1.01.9-2.15.9-3.28zm-3.21 4.38l1.45 1.45C16.16 17.58 14.88 18.24 13.5 18.5v2.26h-3v-2.26c-1.66-.31-3.15-1.25-4.14-2.58l1.43-1.43c.72.93 1.76 1.62 2.96 1.83V12.9L3 5.27 4.27 4l16.73 16.73L19.73 22l-1.57-1.57-2.37-5.05zM7 9h1.74l1.55 1.55c-.09-.18-.16-.36-.21-.55V5c0-1.66 1.34-3 3-3 1.35 0 2.5.86 2.87 2.06l3.63 3.63c-.15-2.5-2.25-4.49-4.75-4.49-2.61 0-4.75 2.14-4.75 4.75V9z"/></svg>',
+    videoOn: '<svg name="video-on" viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>',
+    videoOff: '<svg name="video-off" viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19.73 21.46L18 19.73v-1.23l-4-4v-3L6.27 3.73 5 5l12.73 12.73 2 2 1.27-1.27zM21 7c0-.55-.45-1-1-1h-6.73l2 2H20v5.27l1 1V7zM4 6.27L14.73 17H4c-.55 0-1-.45-1-1V7c0-.55.45-1 1-1h-.27z"/></svg>'
 };
 
 window.Cudi.toggleAudio = function () {
@@ -407,7 +435,11 @@ window.Cudi.toggleAudio = function () {
         if (audioTrack) {
             audioTrack.enabled = !audioTrack.enabled;
             const btn = document.querySelector('#btnToggleAudio');
-            if (btn) btn.textContent = audioTrack.enabled ? '🎤' : '🔇';
+            if (btn) {
+                btn.innerHTML = audioTrack.enabled ? ICONS.micOn : ICONS.micOff;
+                btn.style.backgroundColor = audioTrack.enabled ? '' : '#dc3545';
+                btn.style.color = audioTrack.enabled ? '' : 'white';
+            }
         }
     }
 };
@@ -418,11 +450,15 @@ window.Cudi.toggleVideo = function () {
         if (videoTrack) {
             videoTrack.enabled = !videoTrack.enabled;
             const btn = document.querySelector('#btnToggleVideo');
-            if (btn) btn.textContent = videoTrack.enabled ? '📹' : '❌';
+            if (btn) {
+                btn.innerHTML = videoTrack.enabled ? ICONS.videoOn : ICONS.videoOff;
+                btn.style.backgroundColor = videoTrack.enabled ? '' : '#dc3545';
+                btn.style.color = videoTrack.enabled ? '' : 'white';
 
-            const localVideoPlaceholder = document.getElementById('localVideoPlaceholder');
-            if (localVideoPlaceholder) {
-                localVideoPlaceholder.style.display = videoTrack.enabled ? 'none' : 'flex';
+                const localVideoPlaceholder = document.getElementById('localVideoPlaceholder');
+                if (localVideoPlaceholder) {
+                    localVideoPlaceholder.style.display = videoTrack.enabled ? 'none' : 'flex';
+                }
             }
         }
     }

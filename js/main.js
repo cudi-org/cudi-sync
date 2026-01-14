@@ -518,3 +518,17 @@ if (btnToggleVideo) {
         window.Cudi.toggleVideo();
     });
 }
+
+const btnFullscreen = document.getElementById("btnFullscreen");
+if (btnFullscreen) {
+    btnFullscreen.addEventListener("click", () => {
+        const videoContainer = document.getElementById("videoContainer");
+        if (!document.fullscreenElement) {
+            videoContainer.requestFullscreen().catch(err => {
+                console.error(`Error attempting to enable fullscreen: ${err.message}`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    });
+}
