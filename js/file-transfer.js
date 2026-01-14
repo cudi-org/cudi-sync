@@ -30,6 +30,11 @@ window.Cudi.enviarArchivo = async function () {
         return;
     }
 
+    if (file.size === 0) {
+        window.Cudi.showToast("Cannot send empty files.", "error");
+        return;
+    }
+
     try {
         state.dataChannel.send(JSON.stringify({
             type: "meta",
@@ -54,14 +59,30 @@ window.Cudi.enviarArchivo = async function () {
 
     try {
         while (offset < file.size) {
-            // Si el buffer está lleno, esperamos
+            // Check connection state during loop
+            if (state.dataChannel.readyState !== 'open') {
+                throw new Error("Connection lost during transfer");
+            }
+
+            // Si el buffer está lleno, esperamos con timeout de seguridad
             if (state.dataChannel.bufferedAmount > MAX_BUFFERED_AMOUNT) {
                 await new Promise(resolve => {
+                    let resolved = false;
                     const handler = () => {
+                        if (resolved) return;
+                        resolved = true;
                         state.dataChannel.removeEventListener('bufferedamountlow', handler);
                         resolve();
                     };
                     state.dataChannel.addEventListener('bufferedamountlow', handler);
+
+                    // Fallback: mobile browsers might miss the event
+                    setTimeout(() => {
+                        if (!resolved) {
+                            // console.warn("BufferedAmountLow timeout - forcing resume"); 
+                            handler();
+                        }
+                    }, 100);
                 });
             }
 
