@@ -1,8 +1,16 @@
+// Custom Logger Logic
+const DEBUG_MODE = false;
+
+function logger(message, data = "") {
+    if (DEBUG_MODE) {
+        console.log(`[CUDI-LOG] ${message}`, data);
+    }
+}
 
 window.Cudi.crearPeer = function (isOffer) {
     const state = window.Cudi.state;
     if (state.peer && state.peer.connectionState !== 'closed' && state.peer.connectionState !== 'failed') {
-        console.log("Peer ya existente, reutilizando.");
+        logger("Peer ya existente, reutilizando.");
         if (!isOffer) return;
     }
 
@@ -29,7 +37,7 @@ window.Cudi.crearPeer = function (isOffer) {
         };
 
         state.peer.onconnectionstatechange = () => {
-            console.log(`WebRTC Connection State: ${state.peer.connectionState}`);
+            logger(`WebRTC Connection State: ${state.peer.connectionState}`);
             if (state.peer.connectionState === "disconnected" || state.peer.connectionState === "failed") {
                 window.Cudi.toggleLoading(false);
                 const mon = document.getElementById("connection-monitor");
@@ -72,7 +80,7 @@ window.Cudi.crearPeer = function (isOffer) {
         };
 
         state.peer.ontrack = (event) => {
-            console.log("Track received:", event.track.kind);
+            logger("Track received:", event.track.kind);
             const remoteVideo = document.getElementById("remoteVideo");
             if (remoteVideo && event.streams[0]) {
                 remoteVideo.srcObject = event.streams[0];
@@ -90,7 +98,7 @@ window.Cudi.crearPeer = function (isOffer) {
         state.peer.createOffer()
             .then((oferta) => state.peer.setLocalDescription(oferta))
             .then(() => {
-                console.log("Enviando oferta...");
+                logger("Enviando oferta...");
                 window.Cudi.enviarSocket({
                     tipo: "oferta",
                     oferta: state.peer.localDescription,
@@ -105,29 +113,45 @@ window.Cudi.setupDataChannel = function (channel) {
     const state = window.Cudi.state;
     state.dataChannel = channel;
     state.dataChannel.onopen = () => {
-        window.Cudi.showToast("Ready to transfer.", "success");
-        const fileInput = document.getElementById("fileInput");
-        const chatInput = document.getElementById("chatInput");
-        const sendChatBtn = document.getElementById("sendChatBtn");
+        // Implement retry/check logic to avoid invalid state error
+        const checkAndSend = () => {
+            if (state.dataChannel.readyState === 'open') {
+                window.Cudi.showToast("Ready to transfer.", "success");
+                const fileInput = document.getElementById("fileInput");
+                const chatInput = document.getElementById("chatInput");
+                const sendChatBtn = document.getElementById("sendChatBtn");
 
-        if (fileInput) fileInput.disabled = false;
-        if (chatInput) chatInput.disabled = false;
-        if (sendChatBtn) sendChatBtn.disabled = false;
-        window.Cudi.toggleLoading(false);
+                if (fileInput) fileInput.disabled = false;
+                if (chatInput) chatInput.disabled = false;
+                if (sendChatBtn) sendChatBtn.disabled = false;
+                window.Cudi.toggleLoading(false);
 
-        // Send Profile (Alias) immediately
-        const myAlias = state.localAlias;
-        if (myAlias) {
-            state.dataChannel.send(JSON.stringify({ type: "profile", alias: myAlias }));
-        }
+                // Send Profile (Alias) immediately
+                const myAlias = state.localAlias;
+                if (myAlias) {
+                    try {
+                        state.dataChannel.send(JSON.stringify({ type: "profile", alias: myAlias }));
+                    } catch (e) {
+                        console.error("Error sending profile:", e);
+                    }
+                }
 
-        if (state.enviarArchivoPendiente && state.archivoParaEnviar) {
-            state.enviarArchivoPendiente = false;
-            window.Cudi.enviarArchivo();
-        }
+                // Signal ready state if needed, though profile might be enough
+                // state.dataChannel.send(JSON.stringify({ type: 'ready_to_receive' }));
 
-        const statusEl = document.getElementById("status");
-        if (statusEl) statusEl.textContent = "Ready to Transfer";
+                if (state.enviarArchivoPendiente && state.archivoParaEnviar) {
+                    state.enviarArchivoPendiente = false;
+                    window.Cudi.enviarArchivo();
+                }
+
+                const statusEl = document.getElementById("status");
+                if (statusEl) statusEl.textContent = "Ready to Transfer";
+            } else {
+                // Retry in 50ms
+                setTimeout(checkAndSend, 50);
+            }
+        };
+        checkAndSend();
     };
     state.dataChannel.onclose = () => {
         window.Cudi.showToast("Data channel closed.", "info");
@@ -145,7 +169,7 @@ window.Cudi.setupDataChannel = function (channel) {
 window.Cudi.manejarMensaje = function (mensaje) {
     const state = window.Cudi.state;
     const appType = window.Cudi.appType;
-    console.log("Mensaje recibido:", mensaje.type, mensaje);
+    logger("Mensaje recibido", mensaje);
     switch (mensaje.type) {
         case "start_negotiation":
             if (state.modo === "send") {
@@ -155,7 +179,7 @@ window.Cudi.manejarMensaje = function (mensaje) {
                     window.Cudi.showToast("Blocked connection attempt (Room Locked).", "error");
                     return;
                 }
-                console.log("Starting negotiation (Server signal)...");
+                logger("Starting negotiation (Server signal)...");
                 window.Cudi.crearPeer(true);
             } else {
                 if (!state.peer) window.Cudi.crearPeer(false);
