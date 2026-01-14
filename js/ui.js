@@ -109,6 +109,12 @@ window.Cudi.displayFileDownload = function (filename, url, type, alias) {
         mediaElement.controls = true;
         mediaElement.playsInline = true;
         mediaElement.className = 'chat-media-video';
+    } else if (ext === 'pdf') {
+        // PDF Preview - Using iframe for better compatibility
+        mediaElement = document.createElement('iframe');
+        mediaElement.src = url;
+        mediaElement.className = 'chat-media-pdf';
+        mediaElement.title = "PDF Preview";
     }
 
     if (mediaElement) {
@@ -123,6 +129,22 @@ window.Cudi.displayFileDownload = function (filename, url, type, alias) {
     textSpan.textContent = filename.length > 25 ? filename.substring(0, 22) + '...' : filename;
     textSpan.title = filename;
     headerDiv.appendChild(textSpan);
+
+    // Button Container
+    const btnContainer = document.createElement("div");
+    btnContainer.style.display = "flex";
+    btnContainer.style.gap = "8px";
+
+    // Extra "Open" button for PDF
+    // Removed for audio/video as requested by user
+    if (ext === 'pdf') {
+        const openBtn = document.createElement("button");
+        openBtn.className = "download-btn-icon";
+        openBtn.title = "Open in New Tab";
+        openBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`;
+        openBtn.onclick = () => window.open(url, '_blank');
+        btnContainer.appendChild(openBtn);
+    }
 
     const btn = document.createElement("button");
     btn.className = "download-btn-icon";
@@ -151,7 +173,8 @@ window.Cudi.displayFileDownload = function (filename, url, type, alias) {
         // We already have the Blob URL provided.
     };
 
-    headerDiv.appendChild(btn);
+    btnContainer.appendChild(btn);
+    headerDiv.appendChild(btnContainer);
     wrapper.appendChild(headerDiv);
 
     p.appendChild(wrapper);

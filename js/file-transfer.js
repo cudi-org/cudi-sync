@@ -88,7 +88,31 @@ window.Cudi.processBuffer = function (data) {
     const receivedSize = state.archivoRecibidoBuffers.reduce((acc, b) => acc + b.byteLength, 0);
 
     if (receivedSize >= state.tamañoArchivoEsperado) {
-        const blob = new Blob(state.archivoRecibidoBuffers, { type: state.tipoMimeRecibido || '' });
+        const ext = state.nombreArchivoRecibido.split('.').pop().toLowerCase();
+        let mimeType = state.tipoMimeRecibido || '';
+
+        // Force correct MIME types for known extensions to avoid browser playback issues
+        const MIME_MAP = {
+            'mp3': 'audio/mpeg',
+            'wav': 'audio/wav',
+            'ogg': 'audio/ogg',
+            'mp4': 'video/mp4',
+            'webm': 'video/webm',
+            'png': 'image/png',
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'gif': 'image/gif',
+            'webp': 'image/webp',
+            'pdf': 'application/pdf'
+        };
+
+        if (MIME_MAP[ext]) {
+            mimeType = MIME_MAP[ext];
+        } else if (!mimeType) {
+            mimeType = 'application/octet-stream';
+        }
+
+        const blob = new Blob(state.archivoRecibidoBuffers, { type: mimeType });
         state.archivoRecibidoBuffers = [];
 
         const url = URL.createObjectURL(blob);
