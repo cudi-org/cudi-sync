@@ -1,4 +1,3 @@
-// Initialize Global Namespace
 window.Cudi = window.Cudi || {};
 
 window.Cudi.state = {

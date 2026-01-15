@@ -266,6 +266,7 @@ function manejarChunk(data) {
                 state.nombreArchivoRecibido = msg.nombre;
                 state.tamañoArchivoEsperado = msg.tamaño;
                 state.tipoMimeRecibido = msg.tipoMime;
+                state.hashEsperado = msg.hash; // NEW: Capturar hash para validación
                 state.archivoRecibidoBuffers = [];
                 window.Cudi.showToast(`Receiving: ${state.nombreArchivoRecibido}`, "info");
             } else if (msg.type === "chat") {

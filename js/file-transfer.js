@@ -40,7 +40,17 @@ window.Cudi.enviarArchivo = async function () {
             type: "meta",
             nombre: file.name,
             tamaño: file.size,
-            tipoMime: file.type
+            tipoMime: file.type,
+            hash: await (async () => {
+                try {
+                    const buf = await file.arrayBuffer();
+                    const hashBuffer = await crypto.subtle.digest('SHA-256', buf);
+                    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+                } catch (e) {
+                    console.error("Hashing error:", e);
+                    return null;
+                }
+            })()
         }));
     } catch (e) {
         console.error("Error sending meta:", e);
@@ -103,7 +113,7 @@ window.Cudi.enviarArchivo = async function () {
     }
 }
 
-window.Cudi.processBuffer = function (data) {
+window.Cudi.processBuffer = async function (data) {
     const state = window.Cudi.state;
     state.archivoRecibidoBuffers.push(data);
     const receivedSize = state.archivoRecibidoBuffers.reduce((acc, b) => acc + b.byteLength, 0);
@@ -112,7 +122,7 @@ window.Cudi.processBuffer = function (data) {
         const ext = state.nombreArchivoRecibido.split('.').pop().toLowerCase();
         let mimeType = state.tipoMimeRecibido || '';
 
-        // Force correct MIME types for known extensions to avoid browser playback issues
+        // Force correct MIME types for known extensions
         const MIME_MAP = {
             'mp3': 'audio/mpeg',
             'wav': 'audio/wav',
@@ -134,6 +144,28 @@ window.Cudi.processBuffer = function (data) {
         }
 
         const blob = new Blob(state.archivoRecibidoBuffers, { type: mimeType });
+
+        // Integrity Check
+        if (state.hashEsperado) {
+            try {
+                const buf = await blob.arrayBuffer();
+                const hashBuffer = await crypto.subtle.digest('SHA-256', buf);
+                const calcHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+                if (calcHash !== state.hashEsperado) {
+                    window.Cudi.showToast("⚠️ Integrity Check FAILED!", "error");
+                    if (!confirm("Security Warning: File hash mismatch.\nThe file may be corrupted or tampered.\n\nDo you want to download it anyway?")) {
+                        state.archivoRecibidoBuffers = [];
+                        return;
+                    }
+                } else {
+                    window.Cudi.showToast("✅ Integrity Verified", "success");
+                }
+            } catch (e) {
+                console.error("Verification error", e);
+            }
+        }
+
         state.archivoRecibidoBuffers = [];
 
         const url = URL.createObjectURL(blob);
