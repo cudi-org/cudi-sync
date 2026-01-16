@@ -60,7 +60,9 @@ window.Cudi.iniciarConexion = function () {
                 const texto = await event.data.text();
                 const mensaje = JSON.parse(texto);
                 if (window.Cudi.manejarMensaje) window.Cudi.manejarMensaje(mensaje);
-            } catch { }
+            } catch {
+                // Ignore parse errors from Blob
+            }
         }
     });
 }

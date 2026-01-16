@@ -220,7 +220,7 @@ window.Cudi.manejarMensaje = function (mensaje) {
             window.location.reload();
             break;
 
-        case "signal":
+        case "signal": {
             const data = mensaje.data;
             if (data.tipo === "oferta") {
                 if (!state.peer) window.Cudi.crearPeer(false);
@@ -245,6 +245,7 @@ window.Cudi.manejarMensaje = function (mensaje) {
                 }
             }
             break;
+        }
 
         case "error":
             logger("Server Error:", mensaje.message);
@@ -313,7 +314,9 @@ function manejarChunk(data) {
                     if (mon) mon.textContent = `Connected: ${peerAlias}`;
                 }
             }
-        } catch { }
+        } catch {
+            // Ignore JSON parse errors for non-JSON strings
+        }
     } else {
         // ... binary handling ...
         const buffer = (data instanceof Blob) ? null : data;
@@ -410,7 +413,9 @@ window.Cudi.stopVideo = function () {
                 const senders = state.peer.getSenders();
                 const sender = senders.find(s => s.track === track);
                 if (sender) {
-                    try { state.peer.removeTrack(sender); } catch (e) { }
+                    try { state.peer.removeTrack(sender); } catch (e) {
+                        // Ignore removeTrack errors
+                    }
                 }
             }
         });
@@ -461,7 +466,9 @@ window.Cudi.startScreenShare = async function () {
                 if (sender) sender.replaceTrack(camTrack);
                 document.getElementById('localVideo').srcObject = window.Cudi.localStream;
             } else {
-                if (sender) try { state.peer.removeTrack(sender); } catch (e) { }
+                if (sender) try { state.peer.removeTrack(sender); } catch (e) {
+                    // Ignore track removal error
+                }
                 window.Cudi.stopVideo();
                 window.Cudi.renegotiate();
             }
