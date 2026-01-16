@@ -246,6 +246,38 @@ window.Cudi.manejarMensaje = function (mensaje) {
             }
             break;
 
+        case "error":
+            logger("Server Error:", mensaje.message);
+            window.Cudi.toggleLoading(false);
+            if (mensaje.message === "Wrong password") {
+                alert("Incorrect Password.");
+                window.location.hash = "";
+                window.location.reload();
+            } else if (mensaje.message === "Room is full") {
+                alert("Room is full (Max 2 peers).");
+                window.location.hash = "";
+                window.location.reload();
+            } else if (mensaje.message === "Password required") {
+                alert("This room requires a password.");
+                window.location.hash = "";
+                window.location.reload();
+            } else {
+                window.Cudi.showToast(`Error: ${mensaje.message}`, "error");
+            }
+            break;
+
+        case "room_created":
+            logger("Room created:", mensaje.room);
+            // Optional: Store token if we want to support reconnects, otherwise just proceed
+            break;
+
+        case "room_closed":
+            window.Cudi.showToast("Room closed by host.", "info");
+            alert("The host has closed the room.");
+            window.location.hash = "";
+            window.location.reload();
+            break;
+
         case "connection_rejected":
             // Fallback for old logic if server sends this
             window.Cudi.toggleLoading(false);
@@ -332,8 +364,8 @@ window.Cudi.startVideo = async function () {
         if (localVideo) {
             localVideo.srcObject = stream;
             localVideo.muted = true;
-            document.getElementById('videoContainer').style.display = 'block';
-            if (localVideoPlaceholder) localVideoPlaceholder.style.display = 'none';
+            document.getElementById('videoContainer').classList.remove('hidden');
+            if (localVideoPlaceholder) localVideoPlaceholder.classList.add('hidden');
         }
 
         if (btnToggleAudio) {
@@ -361,7 +393,7 @@ window.Cudi.startVideo = async function () {
         }
 
         const btnStart = document.getElementById('btnStartVideo');
-        if (btnStart) btnStart.style.display = 'none';
+        if (btnStart) btnStart.classList.add('hidden');
 
     } catch (err) {
         console.error('Error accessing media devices: ', err);
@@ -385,12 +417,12 @@ window.Cudi.stopVideo = function () {
         window.Cudi.localStream = null;
     }
 
-    document.getElementById('videoContainer').style.display = 'none';
+    document.getElementById('videoContainer').classList.add('hidden');
     const btnStart = document.getElementById('btnStartVideo');
-    if (btnStart) btnStart.style.display = 'inline-flex';
+    if (btnStart) btnStart.classList.remove('hidden');
 
     const localVideoPlaceholder = document.getElementById('localVideoPlaceholder');
-    if (localVideoPlaceholder) localVideoPlaceholder.style.display = 'none';
+    if (localVideoPlaceholder) localVideoPlaceholder.classList.add('hidden');
 
     window.Cudi.renegotiate();
 };
@@ -482,7 +514,11 @@ window.Cudi.toggleVideo = function () {
 
                 const localVideoPlaceholder = document.getElementById('localVideoPlaceholder');
                 if (localVideoPlaceholder) {
-                    localVideoPlaceholder.style.display = videoTrack.enabled ? 'none' : 'flex';
+                    if (videoTrack.enabled) {
+                        localVideoPlaceholder.classList.add('hidden');
+                    } else {
+                        localVideoPlaceholder.classList.remove('hidden');
+                    }
                 }
             }
         }

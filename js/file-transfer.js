@@ -146,6 +146,7 @@ window.Cudi.processBuffer = async function (data) {
         const blob = new Blob(state.archivoRecibidoBuffers, { type: mimeType });
 
         // Integrity Check
+        let isVerified = false;
         if (state.hashEsperado) {
             try {
                 const buf = await blob.arrayBuffer();
@@ -160,6 +161,7 @@ window.Cudi.processBuffer = async function (data) {
                     }
                 } else {
                     window.Cudi.showToast("✅ Integrity Verified", "success");
+                    isVerified = true;
                 }
             } catch (e) {
                 console.error("Verification error", e);
@@ -171,6 +173,6 @@ window.Cudi.processBuffer = async function (data) {
         const url = URL.createObjectURL(blob);
 
         window.Cudi.showToast(`File received: ${state.nombreArchivoRecibido}`, "success");
-        window.Cudi.displayFileDownload(state.nombreArchivoRecibido, url, "received", "Sender");
+        window.Cudi.displayFileDownload(state.nombreArchivoRecibido, url, "received", "Sender", isVerified);
     }
 }

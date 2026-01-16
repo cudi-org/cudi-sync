@@ -1,0 +1,19 @@
+/* Transfer Zone Visibility Fix */
+.visible-flex {
+    display: flex !important;
+}
+
+#zonaTransferencia {
+    width: 100%;
+    /* flex-grow: 1; */
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Ensure hidden overrides everything */
+.hidden {
+    display: none !important;
+}

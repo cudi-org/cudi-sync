@@ -1,0 +1,15 @@
+{
+    "name": "cudi-sync",
+    "version": "1.0.0",
+    "description": "P2P File Transfer",
+    "scripts": {
+        "lint": "eslint ."
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "eslint": "^9.0.0"
+    },
+    "keywords": [],
+    "author": "CUDI",
+    "license": "ISC"
+}

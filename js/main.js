@@ -36,7 +36,9 @@ const closeModal = document.getElementById("close-modal");
 
 function crearSala() {
     const customInput = document.getElementById("customRoomInput");
+    const passwordInput = document.getElementById("roomPasswordInput");
     const customCode = customInput.value.trim().toLowerCase();
+    const password = passwordInput ? passwordInput.value.trim() : "";
 
     if (customCode) {
         if (/^[a-z0-9-]{3,40}$/.test(customCode)) {
@@ -49,11 +51,22 @@ function crearSala() {
         window.Cudi.state.salaId = window.Cudi.generarCodigo();
     }
 
+    if (password) {
+        window.Cudi.state.roomPassword = password;
+    } else {
+        window.Cudi.state.roomPassword = null;
+    }
+
     window.Cudi.state.modo = "send";
     window.location.hash = `send-${window.Cudi.state.salaId}`;
     iniciarTransferencia();
 
-    if (salaStatus) salaStatus.textContent = window.Cudi.state.salaId;
+    if (salaStatus) {
+        salaStatus.textContent = window.Cudi.state.salaId;
+        if (password) {
+            salaStatus.textContent += " (🔒)";
+        }
+    }
 
     // Copy Link Button Logic
     const copyLinkBtn = document.getElementById("copy-link-btn");
@@ -65,7 +78,7 @@ function crearSala() {
         copyLinkBtn.parentNode.replaceChild(newBtn, copyLinkBtn);
 
         newBtn.addEventListener("click", () => {
-            const url = window.location.href.replace("send-", "receive-"); // Simple approximation
+            const url = window.location.href.replace("send-", "receive-");
             // Ideally we get the full tokenified URL if server provided one, otherwise normal link
             navigator.clipboard.writeText(url).then(() => {
                 window.Cudi.showToast("Link copied to clipboard!", "success");
@@ -98,14 +111,27 @@ function crearSala() {
 }
 
 function mostrarRecepcion() {
-    document.getElementById("recepcion").style.display = "block";
+    document.getElementById("recepcion").classList.remove("hidden");
+    // Show password input for joiner if hidden? 
+    // We will share the same input or a new one. 
+    // Let's assume a join password input exists in the 'recepcion' div.
 }
 
 function unirseSala() {
-    const codigo = document.getElementById("codigoSala").value.trim();
+    const codeInput = document.getElementById("codigoSala");
+    const joinPasswordInput = document.getElementById("joinPasswordInput"); // Separate input for join
+    const codigo = codeInput.value.trim();
+    const password = joinPasswordInput ? joinPasswordInput.value.trim() : "";
+
     if (codigo) {
         window.Cudi.state.salaId = codigo.toLowerCase();
         window.Cudi.state.modo = "receive";
+        if (password) {
+            window.Cudi.state.roomPassword = password;
+        } else {
+            window.Cudi.state.roomPassword = null;
+        }
+
         window.location.hash = `receive-${window.Cudi.state.salaId}`;
         iniciarTransferencia();
         window.Cudi.showToast("Joining room...", "info");
@@ -115,16 +141,18 @@ function unirseSala() {
 }
 
 function iniciarTransferencia() {
-    document.getElementById("menu").style.display = "none";
-    document.getElementById("recepcion").style.display = "none";
-    document.getElementById("zonaTransferencia").style.display = "block";
+    document.getElementById("menu").classList.add("hidden");
+    document.getElementById("recepcion").classList.add("hidden");
+    const zona = document.getElementById("zonaTransferencia");
+    zona.classList.remove("hidden");
+    zona.classList.add("visible-flex"); // Force visibility via new class
 
-    if (returnBtn) returnBtn.style.display = "flex";
-    if (salaStatus) salaStatus.textContent = window.Cudi.state.salaId;
+    if (returnBtn) returnBtn.classList.remove("hidden");
+    if (salaStatus) salaStatus.textContent = window.Cudi.state.salaId + (window.Cudi.state.roomPassword ? " (🔒)" : "");
 
     const copyLinkBtn = document.getElementById("copy-link-btn");
     if (copyLinkBtn) {
-        copyLinkBtn.style.display = "inline-flex";
+        copyLinkBtn.classList.remove("hidden");
 
         // Remove old listeners
         const newBtn = copyLinkBtn.cloneNode(true);
@@ -165,10 +193,10 @@ function iniciarTransferencia() {
 
 
         const lockBtn = document.getElementById("lock-room-btn");
-        if (lockBtn) lockBtn.style.display = "none";
+        if (lockBtn) lockBtn.classList.add("hidden");
     } else {
         const lockBtn = document.getElementById("lock-room-btn");
-        if (lockBtn) lockBtn.style.display = "flex";
+        if (lockBtn) lockBtn.classList.remove("hidden");
     }
 }
 
@@ -409,9 +437,9 @@ if (settingsBtn && settingsModal && closeSettingsModal && saveSettingsBtn) {
     // Toggle custom input visibility
     stunSelect.addEventListener("change", () => {
         if (stunSelect.value === "custom") {
-            if (customStunInput) customStunInput.style.display = "block";
+            if (customStunInput) customStunInput.classList.remove("hidden");
         } else {
-            if (customStunInput) customStunInput.style.display = "none";
+            if (customStunInput) customStunInput.classList.add("hidden");
         }
     });
 
@@ -421,7 +449,8 @@ if (settingsBtn && settingsModal && closeSettingsModal && saveSettingsBtn) {
         // Init custom input state
         if (customStunInput) {
             customStunInput.value = window.currentSettings.customStun || "";
-            customStunInput.style.display = (stunSelect.value === "custom") ? "block" : "none";
+            if (stunSelect.value === "custom") customStunInput.classList.remove("hidden");
+            else customStunInput.classList.add("hidden");
         }
 
         filesizeSelect.value = window.currentSettings.maxFileSize || "0";
@@ -433,9 +462,9 @@ if (settingsBtn && settingsModal && closeSettingsModal && saveSettingsBtn) {
         const manualGroup = document.getElementById("manual-approval-group");
         if (manualGroup) {
             if (window.Cudi.state.modo === "receive") {
-                manualGroup.style.display = "none";
+                manualGroup.classList.add("hidden");
             } else {
-                manualGroup.style.display = "block";
+                manualGroup.classList.remove("hidden");
             }
         }
     });
